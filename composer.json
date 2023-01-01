@@ -1,0 +1,54 @@
+{
+    "name": "survos/grid-group-bundle",
+    "type": "symfony-bundle",
+    "description": "Handle groups of CSV as a spreadsheet",
+    "keywords": [
+        "symfony-ux",
+        "symfony6"
+    ],
+    "license": "MIT",
+    "require": {
+        "php": "^8.1",
+        "symfony/config": "^6.1.0",
+        "symfony/dependency-injection": "^6.1.0",
+        "symfony/http-kernel": "^6.1.0",
+        "twig/twig": "^3.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "Survos\\GridGroupBundle\\": "src/"
+        }
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^1.8",
+        "symfony/browser-kit": "^6.1.0",
+        "symfony/framework-bundle": "^6.1.0",
+        "symfony/phpunit-bridge": "^6.1.0",
+        "symfony/twig-bundle": "^6.1.0",
+        "symfony/var-dumper": "^6.1.0",
+        "symfony/webpack-encore-bundle": "^1.11"
+    },
+    "conflict": {
+        "survos/barcode-bundle": "<1.2.34",
+        "survos/workflow-helper-bundle": "<1.2.34",
+        "survos/import-bridge": "<1.2.34",
+        "survos/providence-bundle": "<1.2.34",
+        "survos/crawler-bundle": "<1.2.34",
+        "survos/ruler-bundle": "<1.2.34",
+        "survos/tree-bundle": "<1.2.34",
+        "survos/stripe-product": "<1.2.34",
+        "survos/inspection-bundle": "<1.2.34",
+        "survos/doc-bundle": "<1.2.34",
+        "survos/core-bundle": "<1.2.34",
+        "survos/faker-bundle": "<1.2.34",
+        "survos/bootstrap-bundle": "<1.2.34",
+        "survos/auth-bundle": "<1.2.34",
+        "survos/html-prettify-bundle": "<1.2.34",
+        "survos/command-bundle": "<1.2.34",
+        "survos/grid-bundle": "<1.2.34",
+        "survos/maker-bundle": "<1.2.34",
+        "survos/location-bundle": "<1.2.34",
+        "survos/wiki-bundle": "<1.2.34",
+        "survos/api-grid-bundle": "<1.2.34"
+    }
+}
