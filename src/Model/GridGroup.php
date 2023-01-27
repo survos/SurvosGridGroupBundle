@@ -61,7 +61,7 @@ class GridGroup
         return $this;
     }
 
-    public function asTextString()
+    public function asTextString(int $limit = 0)
     {
 //        $x = '';
 //        foreach($this->getGrids() as $grid) {
@@ -72,7 +72,7 @@ class GridGroup
             fn(Grid $grid) => sprintf("%s\n%s.csv\n%s\n%s\n%s", $this->startString,
                 $grid->getKey(),
                 $grid->getHeadersAsCsvString(),
-                $grid->getDataAsString(),
+                $grid->getDataAsString(limit: $limit),
                 $this->endString
             ),
             $this->getGrids())

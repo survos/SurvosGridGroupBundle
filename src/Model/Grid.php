@@ -31,6 +31,11 @@ class Grid
         return $this->headers;
     }
 
+    public function hasHeaders(): bool
+    {
+        return count($this->headers) > 0;
+    }
+
     public function getHeadersAsCsvString(): string
     {
         return $this->str_putcsv([$this->headers]);
@@ -49,10 +54,10 @@ class Grid
         return count($this->rowData);
     }
 
-    public function getDataAsString(bool $withHeaders = true): string
+    public function getDataAsString(bool $withHeaders = true, $limit=0): string
     {
         $data = $withHeaders ? array_merge([$this->headers], $this->rowData) : $this->rowData;
-        return $this->str_putcsv($data);
+        return $this->str_putcsv($limit ? array_slice($data, 0, $limit) : $data);
     }
 
     public function getDataAsArray(): array
@@ -98,13 +103,25 @@ class Grid
     public function setHeaders(array $headers) {
         $this->headers = $headers;
     }
+
+    public function addRow(array $row): self
+    {
+        // if it's a list of data values ['bob','smith'], the combine it with keys.  Otherwise, checkk the headers and add it ['first' => 'Bob']
+        if (array_is_list($row)) {
+            assert($this->headers == array_keys($row));
+            $this->rowData[] = $row;
+        } else {
+            assert(count($this->headers) == count($row));
+            $this->rowData[] = array_combine($this->headers, $row);
+        }
+        return $this;
+    }
     public function loadHeadersAndData(array $headers, array $data): self
     {
         $this->headers = $headers;
-        assert(array_is_list($data), "data must be a list");
+        assert(array_is_list($data), "data must be a list (of rows)");
         foreach ($data as $row) {
-            assert(count($this->headers) == count($row));
-            $this->rowData[] = array_combine($this->headers, $row);
+            $this->addRow($row);
         }
         return $this;
     }
