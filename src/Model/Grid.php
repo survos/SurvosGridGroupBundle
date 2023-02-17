@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Survos\GridGroupBundle\Model;
 
 
+use App\Entity\FieldMap;
+
 class Grid
 {
     public function __construct(
@@ -54,8 +56,11 @@ class Grid
         return count($this->rowData);
     }
 
-    public function getDataAsString(bool $withHeaders = true, $limit=0): string
+    public function getDataAsString(bool $withHeaders = true, bool $withHeaderCodes = true, $limit=0): string
     {
+        if ($withHeaderCodes) {
+            $this->headers = array_map(fn($header) => FieldMap::slugify($header), $this->headers);
+        }
         $data = $withHeaders ? array_merge([$this->headers], $this->rowData) : $this->rowData;
         return $this->str_putcsv($limit ? array_slice($data, 0, $limit) : $data);
     }
@@ -107,12 +112,24 @@ class Grid
     public function addRow(array $row): self
     {
         // if it's a list of data values ['bob','smith'], the combine it with keys.  Otherwise, checkk the headers and add it ['first' => 'Bob']
+        if (count($row) == 0) {
+            return $this;
+        }
         if (array_is_list($row)) {
-            assert($this->headers == array_keys($row));
-            $this->rowData[] = $row;
-        } else {
+//            dd($this->headers, $row);
             assert(count($this->headers) == count($row));
             $this->rowData[] = array_combine($this->headers, $row);
+        } else {
+            // add new headers, this only works if the row is a key, not the header string.
+            foreach (array_keys($row) as $header) {
+                if (!in_array($header, $this->headers)) {
+//                    dump($header, $this->headers);
+                    $this->headers[] = $header;
+                }
+            }
+//            dd($row, $this->headers);
+//            assert($this->headers == array_keys($row));
+            $this->rowData[] = $row;
         }
         return $this;
     }
@@ -135,7 +152,18 @@ class Grid
             $foundHeaders = false;
             while ($x = fgetcsv($buffer)) {
                 if ($foundHeaders) {
-                    $this->rowData[] = array_combine($this->headers, $x);
+                    if (count($this->headers) < count($x)) {
+                        $x = array_slice($x, 0, count($this->headers));
+                    }
+                    if (count($this->headers) > count($x)) {
+                        $x = array_pad($x, count($this->headers), null);
+                    }
+                    if (count($this->headers) <> count($x)) {
+//                        continue; // skip but we should figure out why
+                        dd($this->headers, $x);
+                    } else {
+                        $this->rowData[] = array_combine($this->headers, $x);
+                    }
                 } else {
                     $this->headers = $x;
                     $foundHeaders = true;
