@@ -94,7 +94,11 @@ class Grid
 // https://gist.github.com/johanmeiring/2894568
         $fp = fopen('php://temp', 'r+b');
         foreach ($input as $row) {
-            fputcsv($fp, $row, $delimiter, $enclosure);
+            try {
+                fputcsv($fp, $row, $delimiter, $enclosure);
+            } catch (\Exception $exception) {
+                dd($row, $delimiter);
+            }
         }
 
         $fpSize = ftell($fp);
@@ -117,6 +121,9 @@ class Grid
         }
         if (array_is_list($row)) {
 //            dd($this->headers, $row);
+            if (count($this->headers) <> count($row)) {
+                dd($this->headers, $row);
+            }
             assert(count($this->headers) == count($row));
             $this->rowData[] = array_combine($this->headers, $row);
         } else {
@@ -142,6 +149,63 @@ class Grid
         }
         return $this;
     }
+
+    static public function readRawData(string $filename, int $limit = 0, int $start = 0): array
+    {
+        $buffer = fopen($filename, 'r+');
+        $data = [];
+        $idx = 0;
+        while ($x = fgetcsv($buffer)) {
+            $idx++;
+            if ($idx < $start) {
+                continue;
+            }
+            $data[] = $x;
+            if ($limit && ($idx > $limit)) {
+                break;
+            }
+        }
+        return $data;
+
+    }
+    private function loadBuffer($buffer, int $limit = 0, int $startingAt = 0) {
+        $foundHeaders = false;
+        $idx = 0;
+        while ($x = fgetcsv($buffer)) {
+            if ($foundHeaders) {
+                $idx++;
+                if ($limit && ($idx > $limit)) {
+                    break;
+                }
+                if ($idx < $startingAt) {
+                    continue;
+                }
+
+                if (count($this->headers) < count($x)) {
+                    $x = array_slice($x, 0, count($this->headers));
+                }
+                if (count($this->headers) > count($x)) {
+                    $x = array_pad($x, count($this->headers), null);
+                }
+                if (count($this->headers) <> count($x)) {
+//                        continue; // skip but we should figure out why
+                    dd($this->headers, $x);
+                } else {
+                    $this->rowData[] = array_combine($this->headers, $x);
+                }
+            } else {
+                $this->headers = $x;
+                $foundHeaders = true;
+            }
+        }
+        fclose($buffer);
+        return $this;
+    }
+    public function loadFile(string $filename, int $limit = 0, int $startingAt = 0): self
+    {
+        $this->loadBuffer(fopen($filename, 'r+'), $limit, $startingAt);
+        return $this;
+    }
     public function loadString(?string $csvText): self
     {
         if (!is_null($csvText)) {
@@ -149,27 +213,7 @@ class Grid
             rewind($buffer);
             fwrite($buffer, $csvText);
             rewind($buffer);
-            $foundHeaders = false;
-            while ($x = fgetcsv($buffer)) {
-                if ($foundHeaders) {
-                    if (count($this->headers) < count($x)) {
-                        $x = array_slice($x, 0, count($this->headers));
-                    }
-                    if (count($this->headers) > count($x)) {
-                        $x = array_pad($x, count($this->headers), null);
-                    }
-                    if (count($this->headers) <> count($x)) {
-//                        continue; // skip but we should figure out why
-                        dd($this->headers, $x);
-                    } else {
-                        $this->rowData[] = array_combine($this->headers, $x);
-                    }
-                } else {
-                    $this->headers = $x;
-                    $foundHeaders = true;
-                }
-            }
-            fclose($buffer);
+            $this->loadBuffer($buffer);
         }
         return $this;
     }
