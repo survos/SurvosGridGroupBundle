@@ -2,10 +2,7 @@
     "name": "survos/grid-group-bundle",
     "type": "symfony-bundle",
     "description": "Handle groups of CSV as a spreadsheet",
-    "keywords": [
-        "symfony-ux",
-        "symfony6"
-    ],
+    "keywords": ["symfony-ux", "symfony6"],
     "license": "MIT",
     "require": {
         "php": "^8.1",
