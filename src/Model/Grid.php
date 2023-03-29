@@ -12,7 +12,9 @@ class Grid
     public function __construct(
         public ?string $key = null,
         public array   $headers = [],
-        public array   $rowData = [])
+        public array   $rowData = [],
+        public string $separator = ','
+    )
     {
 
     }
@@ -171,7 +173,7 @@ class Grid
     private function loadBuffer($buffer, int $limit = 0, int $startingAt = 0) {
         $foundHeaders = false;
         $idx = 0;
-        while ($x = fgetcsv($buffer)) {
+        while ($x = fgetcsv($buffer, separator: $this->separator)) {
             if ($foundHeaders) {
                 $idx++;
                 if ($limit && ($idx > $limit)) {
