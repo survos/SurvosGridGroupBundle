@@ -24,6 +24,30 @@ class GridGroupService
     {
     }
 
+    static public function fetchRow(string $filename, string $separator = ","): \Generator
+    {
+        static $headers=null;
+        static $headrsCount=null;
+        $buffer = fopen($filename, 'r+');
+        while ($row = fgetcsv($buffer, separator: $separator)) {
+            if (empty($headers)) {
+                $headers = $row;
+                $headersCount = count($headers);
+                continue;
+            }
+            $fieldCount = count($row); // how many fields
+            if ($fieldCount > $headersCount) {
+                $row = array_slice($row, 0, $headersCount);
+            } elseif ($fieldCount < $headersCount) {
+                $row = array_pad($row, $headersCount, null);
+            }
+            assert(count($row) == $headersCount, join(',', $headers) . "\n"  . join(',', $row));
+            $data = array_combine($headers, $row);
+            yield $data;
+        }
+    }
+
+
     public function exportAsExcel(GridGroup $gridGroup, string $filename): Xlsx
     {
         if (!class_exists('\PhpOffice\PhpSpreadsheet\Spreadsheet')) {
