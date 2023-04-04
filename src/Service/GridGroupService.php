@@ -27,7 +27,7 @@ class GridGroupService
     static public function fetchRow(string $filename, string $separator = ","): \Generator
     {
         static $headers=null;
-        static $headrsCount=null;
+        static $headersCount=null;
         $buffer = fopen($filename, 'r+');
         while ($row = fgetcsv($buffer, separator: $separator)) {
             if (empty($headers)) {
