@@ -73,7 +73,7 @@ class Reader //  extends \EasyCSV\Reader
                 } elseif ($fieldCount < $headersCount) {
                     $row = array_pad($row, $headersCount, null);
                 }
-                assert(count($row) == $headersCount, join(',', $headers) . "\n" . join(',', $row));
+                assert(count($row) == $headersCount, join(',', $this->headers) . "\n" . join(',', $row));
             }
             $data = array_combine($this->headers, $row);
             yield $data;
