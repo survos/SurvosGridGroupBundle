@@ -9,7 +9,8 @@
         "symfony/config": "^6.1.0",
         "symfony/dependency-injection": "^6.1.0",
         "symfony/http-kernel": "^6.1.0",
-        "twig/twig": "^3.4"
+        "twig/twig": "^3.4",
+        "jwage/easy-csv": "^0.0.4"
     },
     "autoload": {
         "psr-4": {
