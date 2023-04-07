@@ -8,6 +8,24 @@ class Reader //  extends \EasyCSV\Reader
     private int $headerCount;
     private bool $init;
     private  $buffer;
+    private int $currentBufferPosition=0;
+    private $rawRow;
+
+    /**
+     * @return mixed
+     */
+    public function getRawRow()
+    {
+        return $this->rawRow;
+    }
+
+    /**
+     * @param mixed $rawRow
+     */
+    public function setRawRow($rawRow): void
+    {
+        $this->rawRow = $rawRow;
+    }
 
     public function __construct(
         private string $path,
@@ -38,8 +56,11 @@ class Reader //  extends \EasyCSV\Reader
         if (is_null($this->headers)) {
             // we could also get the first row and see if there's a tab in it..
             $headers = fgetcsv($this->buffer, separator: $this->delimiter);
+            if (!$headers || count($headers) == 0) {
+                throw new \Exception($this->path . " Headers are emtpy " . $headers);
+            }
             $headers[0] = trim($headers[0], "\xEF\xBB\xBF");
-            $this->headersCount = count($headers);
+            $this->headerCount = count($headers);
             $this->headers = $headers;
         }
     }
@@ -65,20 +86,46 @@ class Reader //  extends \EasyCSV\Reader
         $this->init();
         $this->currentLine++;
         while ($row = fgetcsv($this->buffer, separator: $this->delimiter)) {
+            $this->setRawRow($row);
             if (!$this->strict) {
-                $headersCount = $this->headersCount;
+                $headersCount = $this->headerCount;
                 $fieldCount = count($row); // how many fields
                 if ($fieldCount > $headersCount) {
                     $row = array_slice($row, 0, $headersCount);
                 } elseif ($fieldCount < $headersCount) {
                     $row = array_pad($row, $headersCount, null);
                 }
-                assert(count($row) == $headersCount, join(',', $this->headers) . "\n" . join(',', $row));
+            } else {
+                assert(count($row) ==  $this->headerCount, $this->path . "\n\n" . join("\n", $this->headers) . "\n\n" . join("\n", $row));
             }
+
             $data = array_combine($this->headers, $row);
             yield $data;
         }
-
     }
+
+    /**
+     * @return array|null
+     */
+    public function getHeaders(): ?array
+    {
+        return $this->headers;
+    }
+
+    /**
+     * @return int
+     */
+    public function getCurrentBufferPosition(): int
+    {
+        return ftell($this->buffer);
+    }
+
+    public function setCurrentBufferPosition($position): int
+    {
+        return fseek($this->buffer, $position);
+    }
+
+
+
 
 }

@@ -10,7 +10,7 @@
         "symfony/dependency-injection": "^6.1.0",
         "symfony/http-kernel": "^6.1.0",
         "twig/twig": "^3.4",
-        "jwage/easy-csv": "^0.0.4"
+        "fire015/flintstone": "^2.3"
     },
     "autoload": {
         "psr-4": {
