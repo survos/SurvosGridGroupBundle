@@ -84,7 +84,6 @@ class BedrockDatabase extends Database
         if (file_exists($existingFile)) {
             $reader = new Reader($existingFile, strict: false);
             foreach ($reader->getRow() as $row) {
-//                dd($row, $reader->getRawRow(), $reader->getHeaders());
                 $this->offsetCache->set($row[$this->getBedrockConfig()->getKeyName()], $reader->getCurrentBufferPosition());
             }
         }
