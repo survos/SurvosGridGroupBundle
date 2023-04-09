@@ -97,6 +97,8 @@ class Grid
         $fp = fopen('php://temp', 'r+b');
         foreach ($input as $row) {
             try {
+                assert(is_array($row), 'not an array ' . json_encode($row));
+                assert(array_is_list($row), 'not an list ' . json_encode($row));
                 fputcsv($fp, $row, $delimiter, $enclosure);
             } catch (\Exception $exception) {
                 dd($row, $delimiter);

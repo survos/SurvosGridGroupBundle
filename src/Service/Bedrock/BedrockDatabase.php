@@ -12,6 +12,8 @@ class BedrockDatabase extends Database
 {
     private BedrockConfig $bedrockConfig;
     private CountableArrayCache $offsetCache;
+    private int $currentSize = 0;
+
     public function __construct(string $name, Config $config = null)
     {
         parent::__construct($name, $config);
@@ -26,17 +28,18 @@ class BedrockDatabase extends Database
      */
     public function appendToFile(string $line)
     {
-        assert(isset($this->bedrockConfig), "bedrock config must be set first");
-
         $headers = $this->getBedrockConfig()->getHeaders();
         $data = json_decode($line, true);
         $file = $this->openFile(static::FILE_APPEND);
+        $file->fseek(0, SEEK_END);
+        $pos = $file->ftell();
+
         // if it's empty, first write the headers
-        if (!$file->getSize()) {
+        if ( ($pos == 0)) {
             $file->fputcsv($headers);
         }
         if (array_keys($data) <> $headers) {
-            // fix the order
+            // fix the order if the data keys don't match the headers
             $dataValues = [];
             foreach ($headers as $key) {
                 $dataValues[] = $data[$key]??null;
@@ -44,12 +47,18 @@ class BedrockDatabase extends Database
         } else {
             $dataValues = array_values($data);
         }
+        // before writing the data, save the position in the offset cache.
         $position =  $file->ftell();
         $this->offsetCache->set($data[$this->getBedrockConfig()->getKeyName()], $position);
 
         $file->fputcsv($dataValues);
-//        $file->fwrite($line);
+        $this->currentSize = $file->ftell();
         $this->closeFile($file);
+    }
+
+    public function getSize(): int
+    {
+        return $this->currentSize;
     }
 
     /**
@@ -65,6 +74,15 @@ class BedrockDatabase extends Database
                 yield new BedrockRow($data, $this->getBedrockConfig()->getKeyName());
             }
         }
+    }
+
+    public function calculateCount(): ?int
+    {
+        $existingFile = $this->getPath();
+        if (file_exists($existingFile)) {
+            $reader = (new Reader($existingFile, strict: true))->getCsvCount();
+        }
+        return null;
     }
 
     public function keyOffset(string $key): ?int

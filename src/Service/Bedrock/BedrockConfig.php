@@ -30,7 +30,7 @@ class BedrockConfig extends Config
 //            throw new \LogicException("You must set the key name");
 ////            $this->keyName = $headers[0];
 //        }
-        if (!array_key_exists($this->keyName, $headers)) {
+        if (!in_array($this->keyName, $headers)) {
             array_unshift($headers, $this->keyName);
         }
         $this->setHeaders($headers);

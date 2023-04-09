@@ -81,6 +81,16 @@ class Reader //  extends \EasyCSV\Reader
         return $this;
     }
 
+    public function getCsvCount(): int
+    {
+        $this->init(0);
+        $c=0;
+        while ($row = fgetcsv($this->buffer, separator: $this->delimiter)) {
+            $c++;
+        }
+        return $c;
+    }
+
     public function getRow(): \Generator
     {
         $this->init();

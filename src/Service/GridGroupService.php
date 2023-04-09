@@ -24,6 +24,20 @@ class GridGroupService
     {
     }
 
+    // includes the header row.
+    static public function countCsvRows(string $filename)
+    {
+        $buffer = fopen($filename, 'r+');
+        $count = 0;
+        while (fgetcsv($buffer)) {
+            $count++;
+        }
+        fclose($buffer);
+        return $count;
+
+    }
+
+
     static public function fetchRow(string $filename, string $separator = ","): \Generator
     {
         static $headers=null;
