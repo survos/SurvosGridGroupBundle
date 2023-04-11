@@ -2,11 +2,16 @@
 
 namespace Survos\GridGroupBundle\Service;
 
-use Flintstone\Cache\ArrayCache;
-use Flintstone\Cache\CacheInterface;
 
-class CountableArrayCache extends ArrayCache implements CacheInterface
+class CountableArrayCache
 {
+    /**
+     * Cache data.
+     *
+     * @var array
+     */
+    protected $cache = [];
+
     public function count(): int
     {
         return count($this->cache);
@@ -17,4 +22,43 @@ class CountableArrayCache extends ArrayCache implements CacheInterface
         return $this->cache;
     }
 
+    /**
+     * {@inheritdoc}
+     */
+    public function contains($key)
+    {
+        return array_key_exists($key, $this->cache);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function get($key)
+    {
+        return $this->cache[$key];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function set($key, $data)
+    {
+        $this->cache[$key] = $data;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function delete($key)
+    {
+        unset($this->cache[$key]);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function flush()
+    {
+        $this->cache = [];
+    }
 }

@@ -225,7 +225,7 @@ class CsvDatabase
             foreach ($reader->getRow() as $row) {
                 try {
                     // this could be a trait, too.
-                    AppService::assertKeyExists($this->getKeyName(), $row);
+//                    AppService::assertKeyExists($this->getKeyName(), $row);
                 } catch (\Exception) {
                     // only during dev
                 }
