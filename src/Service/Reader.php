@@ -57,6 +57,7 @@ class Reader //  extends \EasyCSV\Reader
             // we could also get the first row and see if there's a tab in it..
             $headers = fgetcsv($this->buffer, separator: $this->delimiter);
             if (!$headers || count($headers) == 0) {
+
                 throw new \Exception($this->path . " Headers are emtpy " . $headers);
             }
             $headers[0] = trim($headers[0], "\xEF\xBB\xBF");

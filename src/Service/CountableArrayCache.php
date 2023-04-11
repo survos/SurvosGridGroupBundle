@@ -1,6 +1,6 @@
 <?php
 
-namespace Survos\GridGroupBundle\Service\Bedrock;
+namespace Survos\GridGroupBundle\Service;
 
 use Flintstone\Cache\ArrayCache;
 use Flintstone\Cache\CacheInterface;

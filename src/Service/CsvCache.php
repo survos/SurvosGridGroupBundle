@@ -2,107 +2,71 @@
 
 namespace Survos\GridGroupBundle\Service;
 
-use Flintstone\Cache\ArrayCache;
-use Flintstone\Config;
-use Flintstone\Database;
-use Flintstone\Exception;
-use Flintstone\Flintstone;
-use Flintstone\Line;
-use Flintstone\Validation;
 use Psr\Log\LoggerInterface;
 
-use Survos\GridGroupBundle\Service\Bedrock\BedrockConfig;
-use Survos\GridGroupBundle\Service\Bedrock\BedrockDatabase;
-use Survos\GridGroupBundle\Service\Bedrock\BedrockRow;
-use Survos\GridGroupBundle\Service\Bedrock\CountableArrayCache;
+use Survos\GridGroupBundle\Service\CsvDatabase;
+use Survos\GridGroupBundle\Service\CountableArrayCache;
 
-class CsvCache extends Flintstone
+class CsvCache
 {
-    /**
-     * Flintstone version.
-     *
-     * @var string
-     */
-    const VERSION = '2.3';
-
-    /**
-     * Database class.
-     *
-     * @var BedrockDatabase
-     */
-    protected $database;
-
-    /**
-     * Config class.
-     *
-     * @var Config
-     */
-    protected $config;
-
-    /**
-     * Bedrock Config class, with headers and key
-     *
-     * @var BedrockConfig
-     */
-    protected $bedrockConfig;
-    
-    /**
-     * Constructor.
-     *
-     * @param Database|string $database
-     * @param Config|array $config
-     */
-    public function __construct(BedrockDatabase|string $database,
-                                BedrockConfig|array $config,
-    private ?LoggerInterface $logger=null
+    public function __construct(private string $csvFilename,
+                                private string $keyName,
+                                private array $headers=[],
+    private ?CsvDatabase $database = null,
     )
     {
-        // headers is required
-
-        if (is_array($config)) {
-            $headers = $config['headers']??[];
-            $keyName = $config['keyName']??null;
-            $config = new BedrockConfig($config);
+        if (!$this->database) {
+            $this->database = new CsvDatabase($this->csvFilename, $this->keyName, $this->headers);
         }
-//
-//        $bedrockConfig = new BedrockConfig($headers, $keyName);
-//        $this->setBedrockConfig($config);
-        if (is_string($database)) {
-            if ($ext = pathinfo($database, PATHINFO_EXTENSION)) {
-                $config->setExt($ext);
-            }
-            if ($dir = pathinfo($database, PATHINFO_DIRNAME)) {
-                $config->setDir($dir);
-            }
-            $database = pathinfo($database, PATHINFO_FILENAME);
-            $database = new BedrockDatabase($database);
-        }
-        assert($database::class == BedrockDatabase::class);
+    }
 
+    /**
+     * @param string $keyName
+     * @return CsvCache
+     */
+    public function setKeyName(string $keyName): CsvCache
+    {
+        $this->keyName = $keyName;
+        return $this;
+    }
 
+    /**
+     * @param array $headers
+     * @return CsvCache
+     */
+    public function setHeaders(array $headers): CsvCache
+    {
+        $this->headers = $headers;
+        $this->getDatabase()->setHeaders($headers);
+        return $this;
+    }
 
-        if (count($headers) == 0) {
-            throw new \LogicException("the 'headers' property must be an array with at least one field");
-        }
+    /**
+     * @return string
+     */
+    public function getCsvFilename(): string
+    {
+        return $this->csvFilename;
+    }
 
-        parent::__construct($database, $config);
-//        $keyName = $config['keyName']??'_id';
+    /**
+     * @return string
+     */
+    public function getKeyName(): string
+    {
+        return $this->keyName;
+    }
 
-//        $bedrockConfig = new BedrockConfig($headers, $keyName);
-        $this->setBedrockConfig($config);
-
-//        $this->setDatabase($database);
-//        $this->setConfig($config);
+    /**
+     * @return array
+     */
+    public function getHeaders(): array
+    {
+        return $this->headers;
     }
 
     public function contains(string $key): bool
     {
-//        try {
-//            Validation::validateKey($key);
-//        } catch (\Exception $exception) {
-//            $key = md5($key);
-//        }
-//
         $keyOffset = $this->getDatabase()->keyOffset($key);
         return !is_null($keyOffset); // 0 is a valid offset, though realistically that will always be the headers.
     }
@@ -116,12 +80,6 @@ class CsvCache extends Flintstone
      */
     public function set(string $key, $data)
     {
-//        try {
-//            Validation::validateKey($key);
-//        } catch (\Exception $exception) {
-//            $key = md5($key);
-//        }
-
         // If the key already exists we need to replace it
         if ($this->contains($key)) {
             $this->replace($key, $data);
@@ -129,13 +87,7 @@ class CsvCache extends Flintstone
         }
 
         // Write the key to the database
-        $this->getDatabase()->appendToFile($this->getLineString($key, $data));
-
-        // Delete the key from cache
-        if ($cache = $this->getConfig()->getCache()) {
-            $cache->set($key, $data);
-//            $cache->delete($key);
-        }
+        $this->getDatabase()->appendToFile($key, $data);
     }
 
     /**
@@ -154,13 +106,10 @@ class CsvCache extends Flintstone
 //        }
 
 
-        // Fetch the key from cache
-        if ($cache = $this->getConfig()->getCache()) {
-            $this->logger?->warning(" Looking for $key in " . $this->getDatabase()->getPath());
-            if ($cache->contains($key)) {
-                $this->logger?->warning(" In CACHE! $key!");
-                return $cache->get($key);
-            }
+        // Fetch the offset
+        if ($position = $this->getDatabase()->keyOffset($key)) {
+            // @todo: move the buffer pointer using fseek and get the record there.
+
         }
 
         // Fetch the key from database
@@ -168,20 +117,12 @@ class CsvCache extends Flintstone
         $data = false;
 
 
-        assert(false, "what calls get");
-        $this->logger?->warning("Partial scan for $key...");
-        foreach ($file as $bedrockRow) {
-            if ($bedrockRow->getKeyValue() == $key) {
-                $data = $bedrockRow->getData();
+        foreach ($file as $row) {
+            if ($row[$this->getKeyName()] == $key) {
+                $data = $row;
                 break;
             }
         }
-
-        // Save the data to cache
-        if ($cache && $data !== false) {
-            $cache->set($key, $data);
-        }
-//        dd($cache, $cache->get($key));
 
         return $data;
     }
@@ -200,9 +141,8 @@ class CsvCache extends Flintstone
         $file = $this->getDatabase()->readFromFile();
 
         foreach ($file as $row) {
-            $tmpFile->fputcsv($this->getBedrockConfig()->getHeaders());
-            /** @var BedrockRow $line */
-            if ($row->getKeyValue() == $key) {
+            $tmpFile->fputcsv($this->getHeaders());
+            if ($row[$this->getKeyName()] == $key) {
                 if ($data !== false) {
                     $tmpFile->fputcsv($data);
                 }
@@ -216,58 +156,14 @@ class CsvCache extends Flintstone
         // Overwrite the database with the temporary file
         $this->getDatabase()->writeTempToFile($tmpFile);
 
-        // Delete the key from cache, which might have the old data.
-        if ($cache = $this->getConfig()->getCache()) {
-            assert(false, "update the offset cache " . $key . ' ' . $this->getDatabase()->getPath());
-            $cache->delete($key);
-        }
+
     }
 
 
 
-    /**
-     * Set the config.
-     *
-     * @param Config $config
-     */
-    public function setBedrockConfig(BedrockConfig $config)
-    {
-        $this->bedrockConfig = $config;
-        $this->getDatabase()->setBedrockConfig($config);
-    }
-
-
-    public function getBedrockConfig(): BedrockConfig
-    {
-        return $this->bedrockConfig;
-    }
-
-    public function getDatabase(): BedrockDatabase
+    public function getDatabase(): CsvDatabase
     {
         return $this->database;
-//        return parent::getDatabase(); // TODO: Change the autogenerated stub
     }
-    
-
-
-    protected function getLineString(string $key, $data): string
-    {
-        $headers = $this->getBedrockConfig()->getHeaders();
-        $keyName = $this->getBedrockConfig()->getKeyName();
-        if (!array_key_exists($keyName, $headers)) {
-            $data = array_merge([$keyName => $key], $data);
-        }
-        $x = [];
-        foreach ($this->getBedrockConfig()->getHeaders() as $header) {
-            $x[$header] = $data[$header];
-        }
-        return json_encode($x); // because getLineString must be a string.
-
-        dump($data, $this->getBedrockConfig()->getHeaders());
-        assert(array_keys($data) == $this->getBedrockConfig()->getHeaders());
-        // @todo: loop through headers to make sure the order is right, no new keys, etc.
-    }
-
-
 
 }
