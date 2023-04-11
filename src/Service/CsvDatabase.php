@@ -317,7 +317,13 @@ class CsvDatabase
      */
     public function openTempFile(): SplTempFileObject
     {
-        return new SplTempFileObject($this->getSwapMemoryLimit());
+        return new SplTempFileObject();
+    }
+
+    public function delete(string $key)
+    {
+        $offset = $this->keyOffset($key);
+        // get the file from the beginning to the offset.  Fetch the line (to move the offset), then get the rest of the file.
     }
 
     /**
@@ -363,6 +369,99 @@ class CsvDatabase
         $this->closeFile($file);
         $tmpFile = null;
     }
+
+    /**
+     * Get a key from the database.
+     *
+     * @param string $key
+     *
+     * @return mixed
+     */
+    public function get(string $key)
+    {
+//        try {
+//            Validation::validateKey($key);
+//        } catch (\Exception $exception) {
+//            $key = md5($key);
+//        }
+
+
+        // Fetch the offset
+        if ($position = $this->keyOffset($key)) {
+            // @todo: move the buffer pointer using fseek and get the record there.
+
+        }
+
+        // Fetch the key from database
+        $file = $this->readFromFile();
+        $data = false;
+
+
+        foreach ($file as $row) {
+            if ($row[$this->getKeyName()] == $key) {
+                $data = $row;
+                break;
+            }
+        }
+
+        return $data;
+    }
+
+    public function has(string $key): bool
+    {
+        $keyOffset = $this->keyOffset($key);
+        return !is_null($keyOffset); // 0 is a valid offset, though realistically that will always be the headers.
+    }
+
+
+    public function set(string $key, $data)
+    {
+        // If the key already exists we need to replace it
+        if ($this->has($key)) {
+            $this->replace($key, $data);
+            return;
+        }
+
+        // Write the key to the database
+        $this->appendToFile($key, $data);
+    }
+
+    /**
+     * Replace a key in the database.
+     *
+     * @param string $key
+     * @param mixed $data
+     */
+    public function replace(string $key, $data)
+    {
+        // better way is to get the current key, copy the file up to the offset, insert the key, grab the rest of the file, reload offsets.
+
+        //
+        // Write a new database to a temporary file
+        $tmpFile = $this->openTempFile();
+        $file = $this->readFromFile();
+
+        foreach ($file as $row) {
+            $tmpFile->fputcsv($this->getHeaders());
+            if ($row[$this->getKeyName()] == $key) {
+                if ($data !== false) {
+                    $tmpFile->fputcsv($data);
+                }
+            } else {
+                $tmpFile->fputcsv($data);
+            }
+        }
+
+        $tmpFile->rewind();
+
+        // Overwrite the database with the temporary file
+        $this->writeTempToFile($tmpFile);
+
+
+    }
+
+
+
 
 
 }
