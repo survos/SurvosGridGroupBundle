@@ -2,10 +2,10 @@
 
 namespace Survos\GridGroupBundle\Service;
 
-use App\Service\AppService;
 use \Exception;
 use SplFileObject;
 use SplTempFileObject;
+use Survos\GridGroupBundle\Service\CountableArrayCache;
 use Survos\GridGroupBundle\Service\Reader;
 
 class CsvDatabase
@@ -62,7 +62,7 @@ class CsvDatabase
     private CountableArrayCache $offsetCache;
     private int $currentSize = 0;
 
-    public function __construct(private string $filename, private string $keyName, private array $headers=[], private bool $useGZip=false)
+    public function __construct(private string $filename, private string $keyName, private array $headers = [], private bool $useGZip = false)
     {
         $this->offsetCache = new CountableArrayCache();
         if (!in_array($this->keyName, $this->headers)) {
@@ -136,9 +136,11 @@ class CsvDatabase
     /**
      * Append a line to the database file.
      *
-     * @param string $line
+     * @param string $key
+     * @param array $data
+     * @throws Exception
      */
-    public function appendToFile(string $key, array $data)
+    public function appendToFile(string $key, array $data): void
     {
         $headers = $this->getHeaders();
         $file = $this->openFile(static::FILE_APPEND);
@@ -146,12 +148,12 @@ class CsvDatabase
         $pos = $file->ftell();
 
         // if it's empty, first write the headers
-        if (count($headers) ==0 || ($headers = [$this->getKeyName()])) {
+        if (count($headers) == 0 || ($headers = [$this->getKeyName()])) {
             $headers = array_keys($data);
             $this->setHeaders($headers);
         }
 
-        if ( ($pos == 0)) {
+        if (($pos == 0)) {
             $file->fputcsv($headers);
         }
 
@@ -160,7 +162,7 @@ class CsvDatabase
             // fix the order if the data keys don't match the headers
             $dataValues = [];
             foreach ($headers as $key) {
-                $dataValues[] = $data[$key]??null;
+                $dataValues[] = $data[$key] ?? null;
             }
         } else {
             $dataValues = array_values($data);
@@ -169,7 +171,7 @@ class CsvDatabase
             $data[$this->getKeyName()] = $key;
         }
         // before writing the data, save the position in the offset cache.
-        $position =  $file->ftell();
+        $position = $file->ftell();
 
         assert(array_key_exists($this->getKeyName(), $data), json_encode($data));
         $this->offsetCache->set($key, $position);
@@ -210,7 +212,7 @@ class CsvDatabase
 
     public function keyOffset(string $key): ?int
     {
-        if ($this->offsetCache->count()==0) {
+        if ($this->offsetCache->count() == 0) {
             $this->loadOffsetCache();
         }
         return $this->offsetCache->contains($key) ? $this->offsetCache->get($key) : null;
@@ -229,12 +231,10 @@ class CsvDatabase
                 } catch (\Exception) {
                     // only during dev
                 }
-                $this->offsetCache->set($row[$this->getKeyName()], $reader->getCurrentBufferPosition());
+                $this->offsetCache->set($row[$this->getKeyName()], $reader->getRowOffset());
             }
         }
     }
-
-
 
 
     /**
@@ -274,9 +274,9 @@ class CsvDatabase
      *
      * @param int $mode
      *
+     * @return SplFileObject
      * @throws Exception
      *
-     * @return SplFileObject
      */
     protected function openFile(int $mode): SplFileObject
     {
@@ -323,6 +323,33 @@ class CsvDatabase
     public function delete(string $key)
     {
         $offset = $this->keyOffset($key);
+
+        $tempFile = $this->openTempFile();
+        $file = $this->openFile(static::FILE_READ);
+
+        $firstPart = $file->fread($offset);
+
+        $file->rewind();
+        while (!$file->eof()) {
+            $file->next();
+        }
+        $endOfFile = $file->ftell();
+
+        $file->rewind();
+        $file->fseek($offset);
+        $file->next();
+
+        $secondPart = $file->fread($endOfFile - $offset);
+
+        $tempFile->fwrite($firstPart);
+        $tempFile->fwrite($secondPart);
+
+        $this->closeFile($file);
+
+        $tempFile->rewind();
+        $this->writeTempToFile($tempFile);
+
+        $this->loadOffsetCache();
         // get the file from the beginning to the offset.  Fetch the line (to move the offset), then get the rest of the file.
     }
 
@@ -357,6 +384,7 @@ class CsvDatabase
      * Write temporary file contents to database file.
      *
      * @param SplTempFileObject $tmpFile
+     * @throws Exception
      */
     public function writeTempToFile(SplTempFileObject &$tmpFile)
     {
@@ -431,8 +459,9 @@ class CsvDatabase
      *
      * @param string $key
      * @param mixed $data
+     * @throws Exception
      */
-    public function replace(string $key, $data)
+    public function replace(string $key, mixed $data)
     {
         // better way is to get the current key, copy the file up to the offset, insert the key, grab the rest of the file, reload offsets.
 
@@ -441,14 +470,14 @@ class CsvDatabase
         $tmpFile = $this->openTempFile();
         $file = $this->readFromFile();
 
+        $tmpFile->fputcsv($this->getHeaders());
         foreach ($file as $row) {
-            $tmpFile->fputcsv($this->getHeaders());
             if ($row[$this->getKeyName()] == $key) {
                 if ($data !== false) {
                     $tmpFile->fputcsv($data);
                 }
             } else {
-                $tmpFile->fputcsv($data);
+                $tmpFile->fputcsv($row);
             }
         }
 
@@ -460,8 +489,18 @@ class CsvDatabase
 
     }
 
+    /**
+     * Resets database file
+     *
+     * @return bool
+     */
+    public function purge(): bool
+    {
+        if (file_exists($this->getPath())) {
+            unlink($this->getPath());
+        }
 
-
-
+        return true;
+    }
 
 }

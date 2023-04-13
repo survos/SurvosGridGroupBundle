@@ -2,10 +2,13 @@
 
 namespace Survos\GridGroupBundle;
 
+use Survos\GridGroupBundle\Service\CsvCacheAdapter;
+use Survos\GridGroupBundle\Service\CsvDatabase;
 use Survos\GridGroupBundle\Service\GridGroupService;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 
@@ -23,17 +26,21 @@ class SurvosGridGroupBundle extends AbstractBundle
         ;
         $container->services()->alias(GridGroupService::class, $grid_group_service_id);
 
-        // twig classes
+//        $grid_group_service_id = 'survos.grid_group_csv_database';
+//        $builder
+//            ->autowire($grid_group_service_id, CsvDatabase::class)
+//            ->setPublic(true)
+//        ;
+//
+//        $grid_group_service_id = 'survos.grid_group_csv_adapter';
+//        $builder
+//            ->autowire($grid_group_service_id, CsvCacheAdapter::class)
+//            ->setPublic(true)
+//            ->setAutoconfigured(true)
+//        ;
 
-        /*
-        $definition = $builder
-        ->autowire('survos.barcode_twig', BarcodeTwigExtension::class)
-        ->addTag('twig.extension');
+        // @todo: set the logger
 
-        $definition->setArgument('$widthFactor', $config['widthFactor']);
-        $definition->setArgument('$height', $config['height']);
-        $definition->setArgument('$foregroundColor', $config['foregroundColor']);
-        */
 
     }
 
