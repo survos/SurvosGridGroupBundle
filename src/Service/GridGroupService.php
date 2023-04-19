@@ -8,9 +8,11 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Psr\Log\LoggerInterface;
 use Survos\CrawlerBundle\Model\Link;
+use Survos\GridGroupBundle\Model\Grid;
 use Survos\GridGroupBundle\Model\GridGroup;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Component\Finder\Finder;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -23,6 +25,27 @@ class GridGroupService
     )
     {
     }
+
+    static public function createFromDirectory(string $groupDir, ?string $excludePattern=null): GridGroup
+    {
+        $finder = new Finder();
+        $groupCode = pathinfo($groupDir, PATHINFO_FILENAME);
+        $gridGroup = (new GridGroup($groupCode, dir: $groupDir));
+
+        foreach ($finder->in($groupDir) as $file) {
+            assert(!$file->isDir(), "only files (csv, to create a grid or sheet), not " . $file->getRealPath());
+            $headers = self::getHeadersFromFile($file->getRealPath());
+            assert(is_array($headers), $file->getRealPath());
+            $name = $file->getFilenameWithoutExtension();
+            if ($excludePattern && preg_match($excludePattern, $file->getRealPath())) {
+                continue;
+            }
+            $grid = (new Grid($name, $headers));
+            $gridGroup->addGrid($grid);
+        }
+        return $gridGroup;
+    }
+
 
     // includes the header row.
     static public function countCsvRows(string $filename)
@@ -64,6 +87,15 @@ class GridGroupService
         }
     }
 
+    static function getHeadersFromFile(string $filename)
+    {
+        // hack, because it returns while inside the loop, this is a yield
+        foreach (self::fetchRow($filename) as $row) {
+            return array_keys($row);
+        }
+
+    }
+
 
 
     public function exportAsExcel(GridGroup $gridGroup, string $filename): Xlsx
@@ -71,6 +103,7 @@ class GridGroupService
         if (!class_exists('\PhpOffice\PhpSpreadsheet\Spreadsheet')) {
 
         }
+        // @todo: check that class exists and require installation, like twig-extra, so it's not required in every installation
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $tocSheet = $spreadsheet->getActiveSheet();
         $tocSheet->setTitle("TOC");

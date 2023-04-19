@@ -6,14 +6,52 @@ namespace Survos\GridGroupBundle\Model;
 
 class GridGroup
 {
-    private array $grids;
 
     public function __construct(
+        private ?string $code=null,
+        private ?string $dir=null,
         private string $startString = '!---',
         private string $endString = '---!',
+        private array $grids = []
     )
     {
         // better would be something that implements ArrayAccess...
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getCode(): ?string
+    {
+        return $this->code;
+    }
+
+    /**
+     * @param string|null $code
+     * @return GridGroup
+     */
+    public function setCode(?string $code): GridGroup
+    {
+        $this->code = $code;
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getDir(): ?string
+    {
+        return $this->dir;
+    }
+
+    /**
+     * @param string|null $dir
+     * @return GridGroup
+     */
+    public function setDir(?string $dir): GridGroup
+    {
+        $this->dir = $dir;
+        return $this;
     }
 
     public function addGrid(Grid $grid): self
@@ -22,7 +60,9 @@ class GridGroup
         return $this;
     }
 
-    /** @return array<int,Grid> */
+    /**
+     * @return <int,Grid>
+     */
     public function getGrids(): array
     {
         return $this->grids;
