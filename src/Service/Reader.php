@@ -56,6 +56,7 @@ class Reader //  extends \EasyCSV\Reader
             return;
         }
         $this->init = true;
+        assert(file_exists($this->path), "Missing " . $this->path);
         $this->buffer = fopen($this->path, 'r+');
         if (is_null($this->headers)) {
             // we could also get the first row and see if there's a tab in it..
@@ -148,7 +149,12 @@ class Reader //  extends \EasyCSV\Reader
      */
     public function getHeaders(): ?array
     {
+        $this->init();
         return $this->headers;
+//        $headers = fgetcsv($this->buffer, separator: $this->delimiter);
+////        $this->setCurrentBufferPosition(0); // reset?
+//        return $headers;
+
     }
 
     /**

@@ -31,10 +31,10 @@ class GridGroupService
         $finder = new Finder();
         $groupCode = pathinfo($groupDir, PATHINFO_FILENAME);
         $gridGroup = (new GridGroup($groupCode, dir: $groupDir));
-
         foreach ($finder->in($groupDir) as $file) {
             assert(!$file->isDir(), "only files (csv, to create a grid or sheet), not " . $file->getRealPath());
-            $headers = self::getHeadersFromFile($file->getRealPath());
+
+            $headers = (new Reader($file->getRealPath()))->getHeaders();
             assert(is_array($headers), $file->getRealPath());
             $name = $file->getFilenameWithoutExtension();
             if ($excludePattern && preg_match($excludePattern, $file->getRealPath())) {
@@ -61,7 +61,7 @@ class GridGroupService
     }
 
 
-    static public function fetchRow(string $filename, string $separator = ","): \Generator
+    static public function fetchRow(string $filename, string $separator = ",", int $limit=null, int $offset=null): \Generator
     {
         static $headers=null;
         static $headersCount=null;
@@ -89,6 +89,7 @@ class GridGroupService
 
     static function getHeadersFromFile(string $filename)
     {
+        assert(false, "problematic!  use reader->getHeaders() instead.");
         // hack, because it returns while inside the loop, this is a yield
         foreach (self::fetchRow($filename) as $row) {
             return array_keys($row);
