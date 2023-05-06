@@ -24,7 +24,7 @@ class CsvCache
      * @param string $keyName
      * @return CsvCache
      */
-    public function setKeyName(string $keyName): CsvCache
+    public function setKeyName(string $keyName): self
     {
         $this->keyName = $keyName;
         return $this;
@@ -34,7 +34,7 @@ class CsvCache
      * @param array $headers
      * @return CsvCache
      */
-    public function setHeaders(array $headers): CsvCache
+    public function setHeaders(array $headers): self
     {
         $this->headers = $headers;
         $this->getDatabase()->setHeaders($headers);
@@ -88,8 +88,10 @@ class CsvCache
     }
 
 
-    protected function replace(string $key, $data){
-        return $this->getDatabase()->replace($key, $data);
+    protected function replace(string $key, $data): self
+    {
+        $this->getDatabase()->replace($key, $data);
+        return $this;
     }
 
 

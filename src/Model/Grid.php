@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Survos\GridGroupBundle\Model;
 
-
-use App\Entity\FieldMap;
+use Symfony\Component\String\Slugger\AsciiSlugger;
 
 class Grid
 {
@@ -60,8 +59,9 @@ class Grid
 
     public function getDataAsString(bool $withHeaders = true, bool $withHeaderCodes = true, $limit=0): string
     {
+        $slugger = new AsciiSlugger();
         if ($withHeaderCodes) {
-            $this->headers = array_map(fn($header) => FieldMap::slugify($header), $this->headers);
+            $this->headers = array_map(fn($header) => $slugger->slug($header), $this->headers);
         }
         $data = $withHeaders ? array_merge([$this->headers], $this->rowData) : $this->rowData;
         return $this->str_putcsv($limit ? array_slice($data, 0, $limit) : $data);

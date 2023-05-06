@@ -4,6 +4,7 @@ namespace Survos\GridGroupBundle;
 
 use Survos\GridGroupBundle\Service\CsvCacheAdapter;
 use Survos\GridGroupBundle\Service\CsvDatabase;
+use Survos\GridGroupBundle\Service\CsvWriter;
 use Survos\GridGroupBundle\Service\GridGroupService;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -23,7 +24,11 @@ class SurvosGridGroupBundle extends AbstractBundle
         $builder
             ->autowire($grid_group_service_id, GridGroupService::class)
             ->setPublic(true)
+            ->setArgument('$slugger', new Reference('slugger'))
         ;
+        $builder
+            ->autowire(CsvWriter::class)
+            ->setPublic(true);
         $container->services()->alias(GridGroupService::class, $grid_group_service_id);
 
 //        $grid_group_service_id = 'survos.grid_group_csv_database';

@@ -1,5 +1,7 @@
 <?php
 
+// this is really the CsvTable, the database is more like the GridGroup
+
 namespace Survos\GridGroupBundle\Service;
 
 use \Exception;
@@ -7,6 +9,7 @@ use SplFileObject;
 use SplTempFileObject;
 use Survos\GridGroupBundle\Service\CountableArrayCache;
 use Survos\GridGroupBundle\Service\Reader;
+use Symfony\Component\String\Slugger\AsciiSlugger;
 
 class CsvDatabase
 {
@@ -60,15 +63,24 @@ class CsvDatabase
 
 
     private CountableArrayCache $offsetCache;
+    private CountableArrayCache $aliases;
     private int $currentSize = 0;
 
-    public function __construct(private string $filename, private string $keyName, private array $headers = [], private bool $useGZip = false)
+    public function __construct(private string $filename, private ?string $keyName=null, private array $headers = [], private bool $useGZip = false)
     {
         $this->offsetCache = new CountableArrayCache();
+        $this->aliases = new CountableArrayCache();
         if (!in_array($this->keyName, $this->headers)) {
             array_unshift($this->headers, $this->keyName);
         }
+    }
 
+    public function reset()
+    {
+        $filename = $this->getPath();
+        if (file_exists($filename)) {
+            unlink($filename);
+        }
     }
 
     /**
@@ -89,9 +101,9 @@ class CsvDatabase
 
     /**
      * @param string $filename
-     * @return CsvDatabase
+     * @return
      */
-    public function setFilename(string $filename): CsvDatabase
+    public function setFilename(string $filename): self
     {
         $this->filename = $filename;
         return $this;
@@ -109,7 +121,7 @@ class CsvDatabase
      * @param string $keyName
      * @return CsvDatabase
      */
-    public function setKeyName(string $keyName): CsvDatabase
+    public function setKeyName(string $keyName): self
     {
         $this->keyName = $keyName;
         return $this;
@@ -127,9 +139,27 @@ class CsvDatabase
      * @param array $headers
      * @return CsvDatabase
      */
-    public function setHeaders(array $headers): CsvDatabase
+    public function setHeaders(array $headers): self
     {
         $this->headers = $headers;
+        return $this;
+    }
+
+    public function addHeader(string $label): self
+    {
+        // @todo: define column schema
+        $slugger = new AsciiSlugger();
+        $header = $slugger->slug($label)->toString();
+        $this->headers[] = $header;
+        if ($header <> $label) {
+            $this->addAlias($label, $header);
+        }
+        return $this;
+    }
+
+    public function addAlias(string $inputKey, string $header): self
+    {
+        $this->aliases->set($inputKey, $header);
         return $this;
     }
 
@@ -221,16 +251,20 @@ class CsvDatabase
 
     public function loadOffsetCache()
     {
+        assert(count($this->headers), "missing headers");
+        dump($this->headers);
         $existingFile = $this->getPath();
         if (file_exists($existingFile)) {
             $reader = new Reader($existingFile, strict: false);
             foreach ($reader->getRow() as $row) {
+//                dd($row, $existingFile);
                 try {
                     // this could be a trait, too.
 //                    AppService::assertKeyExists($this->getKeyName(), $row);
                 } catch (\Exception) {
                     // only during dev
                 }
+                GridGroupService::assertKeyExists($this->getKeyName(), $row);
                 $this->offsetCache->set($row[$this->getKeyName()], $reader->getRowOffset());
             }
         }
@@ -320,7 +354,7 @@ class CsvDatabase
         return new SplTempFileObject();
     }
 
-    public function delete(string $key)
+    public function delete(string $key): self
     {
         $offset = $this->keyOffset($key);
 
@@ -350,6 +384,7 @@ class CsvDatabase
         $this->writeTempToFile($tempFile);
 
         $this->loadOffsetCache();
+        return $this;
         // get the file from the beginning to the offset.  Fetch the line (to move the offset), then get the rest of the file.
     }
 
@@ -442,16 +477,17 @@ class CsvDatabase
     }
 
 
-    public function set(string $key, $data)
+    public function set(string $key, $data): self
     {
         // If the key already exists we need to replace it
         if ($this->has($key)) {
             $this->replace($key, $data);
-            return;
+            return $this;
         }
 
         // Write the key to the database
         $this->appendToFile($key, $data);
+        return $this;
     }
 
     /**
@@ -461,7 +497,7 @@ class CsvDatabase
      * @param mixed $data
      * @throws Exception
      */
-    public function replace(string $key, mixed $data)
+    public function replace(string $key, mixed $data): self
     {
         // better way is to get the current key, copy the file up to the offset, insert the key, grab the rest of the file, reload offsets.
 
@@ -485,8 +521,7 @@ class CsvDatabase
 
         // Overwrite the database with the temporary file
         $this->writeTempToFile($tmpFile);
-
-
+        return $this;
     }
 
     /**

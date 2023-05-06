@@ -15,6 +15,7 @@ use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 use Symfony\Component\Routing\RouterInterface;
+use Symfony\Component\String\Slugger\SluggerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use function Symfony\Component\String\u;
 
@@ -22,9 +23,34 @@ class GridGroupService
 {
 
     public function __construct(
+        private SluggerInterface $slugger
     )
     {
     }
+
+    static public function missingKey($key, $array): string {
+        $keys = array_keys($array);
+        return self::missingElement($key, $keys);
+    }
+
+    static public function missingElement($key, $keys): string {
+        sort($keys, SORT_STRING);
+        return sprintf("Missing [%s]:\n%s", $key, join("\n", $keys));
+    }
+
+
+    static public function assertKeyExists($key, array $array, string $message = '') {
+        assert(array_key_exists($key, $array), self::missingKey($key, $array) . "\n$message");
+    }
+    static public function assertInArray($key, array $array, string $message = '') {
+        assert(in_array($key, $array), self::missingElement($key, $array) . "\n$message");
+    }
+
+    public function slugify(string $string): string
+    {
+        return $this->slugger->slug($string);
+    }
+
 
     static public function createFromDirectory(string $groupDir, ?string $excludePattern=null): GridGroup
     {
