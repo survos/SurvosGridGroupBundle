@@ -111,15 +111,31 @@ class Parser
     }
 
     static public function createSchemaFromMap(array $map, $headers): array    {
-        $fieldNameDelimited = ':';
+        $csvSchema = [];
+        $fieldNameDelimiter = ':'; // e.g. age:int
+
+        // create the map from the headers
         foreach ($headers as $column) {
-            $newColumn = u($column)->snake()->toString(); // default
+            if (str_contains($column, ':')) {
+                [$newColumn, $rule] = explode(':', $column);
+                $map["/^$newColumn$/"] = $rule;
+            } else {
+                $newColumn = u($column)->snake()->toString(); // default
+            }
+            $columns[] = $newColumn;
+        }
+
+        foreach ($columns as $column) {
             $columnType = 'string';
-            foreach ($map['map'] as $regEx => $rule) {
-                if (preg_match($regEx, $newColumn)) {
-                    if (str_contains($rule, $fieldNameDelimited)) { // } && !str_starts_with($rule, 'array:')) {
-                        [$newColumn, $rule] = explode($fieldNameDelimited, $rule, 2);
+            foreach ($map as $regEx => $rule) {
+                if (preg_match($regEx, $column))
+                {
+                    // this may be outdated
+                    if (str_contains($rule, $fieldNameDelimiter)) { // } && !str_starts_with($rule, 'array:')) {
+                        dd($newColumn, $rule);
+                        [$newColumn, $rule] = explode($fieldNameDelimiter, $rule, 2);
                     }
+
 
                     $columnType = $rule; // for now
 
@@ -135,7 +151,7 @@ class Parser
                         $type = 'string';
                     }
                     $outputHeader = $settings['header']??$newColumn;
-                    $outputHeader .= $fieldNameDelimited . $dottedConfig;
+                    $outputHeader .= $fieldNameDelimiter . $dottedConfig;
                     if ($columnType) {
 //                        $outputHeader .= ':' . $columnType;
                     }
@@ -155,16 +171,19 @@ class Parser
                             default => assert(false, $internalCode)
 
                         },
-                        'rel'  =>  CollectionType::class,
                         'array,',
                         'array|',
-                        'array' => TextType::class, // join values with delimiter in formatter
+                        'rel'  =>  CollectionType::class,
+                        'array' => TextType::class, // join values with delimiter in formatter for output
                         'string' => TextType::class,
                         'cat' => TextType::class, // really a relationship to the cat table -- choice?
                         'bool' => CheckboxType::class,
                         'int' => NumberType::class,
                         default => assert(false, $type)
                     };
+//                    if ($type == 'array|') {
+//                        dd($type, $propertyType);
+//                    }
 
                     $options = [];
                     $settings['propertyType'] = $type;
@@ -200,10 +219,10 @@ class Parser
                     assert($type);
 
 //                    dd($columnType, $rule);
-                    break;
+//                    break;
                 }
             }
-            $csvSchema[$newColumn] = $columnType;
+            $csvSchema[$column] = $columnType;
         }
         return $csvSchema;
     }
