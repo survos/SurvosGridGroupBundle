@@ -4,6 +4,17 @@ Under development!
 
 A bundle to manipulate a set of CSV files as a database.  The idea is to avoid having to create temporary entities or models during the data import.
 
+## CsvParser
+The [CSV Reader](https://csv.thephpleague.com/9.0/reader/) class is an excellent way to read records from a database.
+
+```php
+$csv = Reader::createFromPath('/path/to/file.csv', 'r');
+$csv->setHeaderOffset(0);
+$header_offset = $csv->getHeaderOffset(); //returns 0
+$header = $csv->getHeader(); //returns ['First Name', 'Last Name', 'E-mail']
+
+```
+    
 ## Example: create a simple related table.
 
 Given a movie CSV table, create a CsvDatabase (GridGroup?)

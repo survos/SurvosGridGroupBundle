@@ -6,6 +6,15 @@ use Illuminate\Support\Collection;
 use League\Csv\Reader;
 use Survos\GridGroupBundle\CsvSchema\Exceptions\CastException;
 use Survos\GridGroupBundle\CsvSchema\Exceptions\UnsupportedTypeException;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\CollectionType;
+use Symfony\Component\Form\Extension\Core\Type\FormType;
+use Symfony\Component\Form\Extension\Core\Type\NumberType;
+use Symfony\Component\Form\Extension\Core\Type\TextareaType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Yaml\Yaml;
+use function Symfony\Component\String\u;
+
 /**
  * CSV Parser class. This is where the magic happens.
  *
@@ -101,6 +110,105 @@ class Parser
         return $this->parse(Reader::createFromPath($filename));
     }
 
+    static public function createSchemaFromMap(array $map, $headers): array    {
+        $fieldNameDelimited = ':';
+        foreach ($headers as $column) {
+            $newColumn = u($column)->snake()->toString(); // default
+            $columnType = 'string';
+            foreach ($map['map'] as $regEx => $rule) {
+                if (preg_match($regEx, $newColumn)) {
+                    if (str_contains($rule, $fieldNameDelimited)) { // } && !str_starts_with($rule, 'array:')) {
+                        [$newColumn, $rule] = explode($fieldNameDelimited, $rule, 2);
+                    }
+
+                    $columnType = $rule; // for now
+
+                    if (!str_contains($rule, '?')) {
+                        $rule .= '?';
+                    }
+                    [$dottedConfig, $settingsString] = explode('?', $rule);
+                    $settings = Parser::parseQueryString($settingsString);
+                    $values = explode('.', $dottedConfig);
+                    $type = array_shift($values);
+                    $internalCode = array_shift($values);
+                    if ($type == '') {
+                        $type = 'string';
+                    }
+                    $outputHeader = $settings['header']??$newColumn;
+                    $outputHeader .= $fieldNameDelimited . $dottedConfig;
+                    if ($columnType) {
+//                        $outputHeader .= ':' . $columnType;
+                    }
+                    unset($settings['header']);
+                    if (count($settings)) {
+//                        $columnType = json_encode($settings);
+//                        $outputHeader .= ':' . $columnType;
+                        $outputHeader .= '?' . http_build_query($settings);
+//                        dd($outputHeader);
+                    }
+                    $propertyType = TextType::class;
+                    $propertyType = match($type) {
+                        'db' => match($internalCode) {
+                            'code' => TextType::class,
+                            'label' => TextareaType::class,
+                            'description' => TextareaType::class,
+                            default => assert(false, $internalCode)
+
+                        },
+                        'rel'  =>  CollectionType::class,
+                        'array,',
+                        'array|',
+                        'array' => TextType::class, // join values with delimiter in formatter
+                        'string' => TextType::class,
+                        'cat' => TextType::class, // really a relationship to the cat table -- choice?
+                        'bool' => CheckboxType::class,
+                        'int' => NumberType::class,
+                        default => assert(false, $type)
+                    };
+
+                    $options = [];
+                    $settings['propertyType'] = $type;
+                    $settings['internalCode'] = $internalCode;
+
+                    if (count($settings)) {
+                        $options['attr'] = $settings;
+//                        $columnType = json_encode($settings);
+//                        $outputHeader .= ':' . $columnType;
+                        $outputHeader .= '?' . http_build_query($settings);
+//                        dd($outputHeader);
+                    }
+
+                    if ($settings['label']??false) {
+                        $options['label'] = $settings['label'];
+                        unset($settings['label']);
+                    }
+                    if (count($settings)) {
+                        $options['attr'] = $settings;
+                        $outputHeader .= '?' . http_build_query($settings);
+                    }
+
+                    if ($propertyType == CollectionType::class) {
+                        $options['allow_add'] = true;
+                    }
+                    $outputSchema[$newColumn] = array_merge([
+                        'type' => $dottedConfig,
+                    ],
+                        $settings);
+
+                    $columnType = $outputHeader;
+//                    dd($type, $rule, $settings, $values, $columnType, $outputHeader);
+                    assert($type);
+
+//                    dd($columnType, $rule);
+                    break;
+                }
+            }
+            $csvSchema[$newColumn] = $columnType;
+        }
+        return $csvSchema;
+    }
+
+
     /**
      * @param array $columns
      *
@@ -108,7 +216,10 @@ class Parser
      */
     public function parseRow(array $columns)
     {
-        $schema = $this->config['schema'];
+        if (!$schema = $this->config['schema']??false) {
+            dd($columns);
+            $this->createSchemaFromMap($this->config['map'], $columns);
+        }
         if (count($schema) <> count($columns)) {
             dd('columns mismatch', $schema, $columns);
         }
@@ -140,13 +251,15 @@ class Parser
     protected function parse(Reader $reader): \Generator
     {
         $reader->setDelimiter($this->getConfigValue('delimiter', $this->defaultDelimiter));
-        $reader->setEnclosure($this->getConfigValue('enclosure', $this->defaultEnclosure));
-        $reader->setEscape($this->getConfigValue('escape', $this->defaultEscape));
+//        $reader->setEnclosure($this->getConfigValue('enclosure', $this->defaultEnclosure));
+//        $reader->setEscape($this->getConfigValue('escape', $this->defaultEscape));
+        $reader->setHeaderOffset(0);
         // All conversion methods are removed in favor of conversion classes, use League\Csv\CharsetConverter
 //        $reader->setInputEncoding($this->getConfigValue('encoding', $this->defaultEncoding));
 
 //        $rows =  new Collection($reader);
         foreach ($reader->getIterator() as $idx=>$row) {
+//            dd($row, $this, $this->defaultDelimiter);
 //        foreach ($rows as $idx => $row) {
             if ($idx == 0 && ($this->getConfigValue('skipTitle', $this->skipTitle))) {
                 continue;
@@ -213,6 +326,12 @@ class Parser
 
 //        list($type, $parameters) = $this->parseType($type);
 //        dd($type, $values, $parameters);
+        if (preg_match('/(array)(.)/', $type, $m)) {
+            $settings['delim'] = $m[2];
+            $parameters = $m[2];
+            $type = $m[1];
+        }
+
         $methodName = $this->getMethodName($type);
         if (method_exists($this, $methodName)) {
             $method = [$this, $this->getMethodName($type)];
@@ -232,6 +351,7 @@ class Parser
     protected function parseType($type)
     {
         $parameters = [];
+
 
         if (strpos($type, ':') !== false) {
             list($type, $parameters) = explode(':', $type, 2);
@@ -300,7 +420,7 @@ class Parser
      *
      * @return array
      */
-    protected function parseArray($string, $delimiter)
+    protected function parseArray($string, $delimiter=",")
     {
         return explode($delimiter, trim($string));
     }
