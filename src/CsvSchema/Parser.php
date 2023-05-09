@@ -253,11 +253,13 @@ class Parser
             foreach ($valueRules as $valueRule => $newValue) {
                 if ($value == $valueRule) {
                     $value = $newValue;
+                    dump( $value, $valueRule, $newValue);
                 }
             }
 
             $key = array_keys($schema)[$index];
             $parsed = $this->getValue($type, $value, $key);
+            dump($parsed);
             return [$key => $parsed];
         });
         $all = $flat->all();

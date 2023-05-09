@@ -20,7 +20,7 @@
     },
     "scripts": {
         "phpstan": "vendor/bin/phpstan analyse",
-        "coverage": "php -d xpcov.enabled=1 vendor/bin/phpunit --coverage-html coverage && cd coverage && php -S localhost:8900 -d .\n",
+        "coverage": "php -d xpcov.enabled=1 vendor/bin/phpunit --coverage-html coverage\n",
         "tests": "vendor/bin/phpunit"
     },
     "autoload": {

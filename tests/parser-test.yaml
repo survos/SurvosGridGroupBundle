@@ -5,13 +5,15 @@ tests:
     expects: |
       {"name":"bob","age":"22"}
 
-  - source: |
-      name,age
-      bob,22
+  - source: | 
+      name,age,spouse
+      bob,22,\N
     map:
       /age/: int
+    valueRules:
+      '\N': null
     expects: |
-      {"name":"bob","age":22}
+      {"name":"bob","age":22, "spouse": ""}
 
   - source: |
       name,age:int,married:bool,employed:bool

@@ -11,23 +11,31 @@ use function PHPUnit\Framework\assertEquals;
 
 class ParserTest extends TestCase
 {
-    public function testParser()
+    /**
+     * @dataProvider csvTests
+     */
+    public function testParser(array $test)
     {
-        $yaml = Yaml::parseFile(__DIR__ . '/parser-test.yaml');
-        foreach ($yaml['tests'] as $test) {
+
             $csvString = $test['source'];
             $csvReader = Reader::createFromString($csvString)->setHeaderOffset(0);
             $schema = Parser::createSchemaFromMap($test['map'] ?? [], $csvReader->getHeader());
             $config['schema'] = $schema;
+            $config['valueRules'] = $test['valueRules'] ?? [];
             $parser = new Parser($config);
-            foreach ($parser->fromString($csvString) as $row) {
-                $expects = json_decode($test['expects'], true);
+
+            $expectsJson = $test['expects'] ?? null;
+
+            foreach ($parser->fromString($csvString) as $actual) {
+                $expects = json_decode($expectsJson, true);
+                assert($expects, "invalid json string: " . $expectsJson);
+                $this->assertSame($expects, $actual, json_encode($expects) . '<>' . json_encode($actual));
                 assert($expects, "invalid json: " . $test['expects']);
-                assertEquals($expects, $row, json_encode($expects) . '<>' . json_encode($row));
             }
-        }
 
     }
+
+
 
     public static function csvTests()
     {
