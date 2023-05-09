@@ -1,0 +1,40 @@
+tests:
+  - source: |
+      name,age
+      bob,22
+    headers:
+      - name
+      - age
+    expects: |
+      {"name":"bob","age":"22"}
+
+  - source: |
+      name,age
+      bob,22
+    headers:
+      - name
+      - age
+    map:
+      /age/: int
+    expects: |
+      {"name":"bob","age":22}
+
+  - source: |
+      name,age:int
+      bob,22
+    headers:
+      - name
+      - age:int
+    expects: |
+      {"name":"bob","age":22}
+
+  - source: |
+      name,hobbies:array|
+      bob,"golf|poker"
+    headers:
+      - name
+      - hobbies:array|
+    expects: |
+      {"name":"bob","hobbies":["golf","poker"]}
+
+

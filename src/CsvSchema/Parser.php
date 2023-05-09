@@ -102,6 +102,7 @@ class Parser
      */
     public function fromString($input)
     {
+        assert(class_exists(Reader::class),"missing Reader::class");
         return $this->parse(Reader::createFromString($input));
     }
 
