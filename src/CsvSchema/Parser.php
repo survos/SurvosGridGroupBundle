@@ -180,6 +180,7 @@ class Parser
                         'cat' => TextType::class, // really a relationship to the cat table -- choice?
                         'bool' => CheckboxType::class,
                         'int' => NumberType::class,
+                        'float' => NumberType::class,
                         default => assert(false, $type)
                     };
 //                    if ($type == 'array|') {
@@ -414,8 +415,11 @@ class Parser
         return (int) $value;
     }
 
-    protected function parseBool(string|int $value): bool
+    protected function parseBool(string|int|bool $value): bool
     {
+        if ($value == 'false') {
+            return false;
+        }
         return (bool) $value;
     }
 

@@ -20,7 +20,7 @@
     },
     "scripts": {
         "phpstan": "vendor/bin/phpstan analyse",
-        "coverage": "php -d xpcov.enabled=1 vendor/bin/phpunit --coverage-html public/coverage",
+        "coverage": "php -d xpcov.enabled=1 vendor/bin/phpunit --coverage-html coverage && cd coverage && php -S localhost:8900 -d .\n",
         "tests": "vendor/bin/phpunit"
     },
     "autoload": {
@@ -37,7 +37,7 @@
         "symfony/twig-bundle": "^6.1.0",
         "symfony/var-dumper": "^6.1.0",
         "symfony/webpack-encore-bundle": "^1.11",
-        "phpunit/phpunit": "^10.1",
+        "phpunit/phpunit": "^9.5",
         "symfony/yaml": "^6.2"
     },
     "conflict": {
@@ -62,5 +62,10 @@
         "survos/location-bundle": "<1.2.57",
         "survos/wiki-bundle": "<1.2.57",
         "survos/api-grid-bundle": "<1.2.57"
+    },
+    "config": {
+        "allow-plugins": {
+            "symfony/flex": false
+        }
     }
 }
