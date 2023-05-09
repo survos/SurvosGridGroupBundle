@@ -23,7 +23,6 @@
         "coverage": "php -d xpcov.enabled=1 vendor/bin/phpunit --coverage-html public/coverage",
         "tests": "vendor/bin/phpunit"
     },
-
     "autoload": {
         "psr-4": {
             "Survos\\GridGroupBundle\\Tests\\": "tests/",
