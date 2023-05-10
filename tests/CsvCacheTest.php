@@ -43,6 +43,23 @@ class CsvCacheTest extends TestCase
         }
     }
 
+    /**
+     * @dataProvider csvSteps
+     */
+    public function testBaseMethods($test)
+    {
+        $csvCache = new CsvCache($test['db'], $test['key'], []);
+        $this->assertSame($test['db'], $csvCache->getCsvFilename());
+        $this->assertSame($test['key'], $csvCache->getKeyName());
+        $this->assertSame([], $csvCache->getHeaders());
+
+        $csvCache->setKeyName('testKey');
+        $this->assertSame('testKey', $csvCache->getKeyName());
+
+        $csvCache->setHeaders($test['headers']);
+        $this->assertSame($test['headers'], $csvCache->getHeaders());
+    }
+
     public static function csvSteps()
     {
         $data = Yaml::parseFile(__DIR__ . '/cache-test.yaml');

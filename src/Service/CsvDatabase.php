@@ -252,7 +252,6 @@ class CsvDatabase
     public function loadOffsetCache()
     {
         assert(count($this->headers), "missing headers");
-        dump($this->headers);
         $existingFile = $this->getPath();
         if (file_exists($existingFile)) {
             $reader = new Reader($existingFile, strict: false);

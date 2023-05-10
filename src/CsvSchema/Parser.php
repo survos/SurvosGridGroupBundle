@@ -111,8 +111,9 @@ class Parser
         return $this->parse(Reader::createFromPath($filename));
     }
 
-    static public function createSchemaFromMap(array $map, $headers): array    {
+    static public function createConfigFromMap(array $map, $headers): array    {
         $csvSchema = [];
+        $outputSchema = [];
         $fieldNameDelimiter = ':'; // e.g. age:int
 
         // create the map from the headers
@@ -133,10 +134,8 @@ class Parser
                 {
                     // this may be outdated
                     if (str_contains($rule, $fieldNameDelimiter)) { // } && !str_starts_with($rule, 'array:')) {
-                        dd($newColumn, $rule);
-                        [$newColumn, $rule] = explode($fieldNameDelimiter, $rule, 2);
+                        [$column, $rule] = explode($fieldNameDelimiter, $rule, 2);
                     }
-
 
                     $columnType = $rule; // for now
 
@@ -181,6 +180,10 @@ class Parser
                         'bool' => CheckboxType::class,
                         'int' => NumberType::class,
                         'float' => NumberType::class,
+                        'attr' => match ($internalCode) {
+                            'int' => NumberType::class,
+                            default => assert(false, $internalCode)
+                        },
                         default => assert(false, $type)
                     };
 //                    if ($type == 'array|') {
@@ -211,7 +214,7 @@ class Parser
                     if ($propertyType == CollectionType::class) {
                         $options['allow_add'] = true;
                     }
-                    $outputSchema[$newColumn] = array_merge([
+                    $outputSchema[$column] = array_merge([
                         'type' => $dottedConfig,
                     ],
                         $settings);
@@ -226,7 +229,10 @@ class Parser
             }
             $csvSchema[$column] = $columnType;
         }
-        return $csvSchema;
+        return [
+            'schema' => $csvSchema,
+            'outputSchema' => $outputSchema
+            ];
     }
 
 
@@ -237,13 +243,17 @@ class Parser
      */
     public function parseRow(array $columns)
     {
+        if (empty($this->config)) {
+
+        }
         if (!$schema = $this->config['schema']??false) {
-            dd($columns);
-            $this->createSchemaFromMap($this->config['map'], $columns);
+            // ugh!
+            $schema = self::createConfigFromMap($this->config['map'], $columns)['schema'];
         }
-        if (count($schema) <> count($columns)) {
-            dd('columns mismatch', $schema, $columns);
-        }
+
+//        if (count($schema) <> count($columns)) {
+//            dd('columns mismatch', $schema, $columns);
+//        }
         assert(count($schema) == count($columns), "mismatch %d %d", );
 
         $zipper = collect($columns)->zip($schema);
@@ -253,13 +263,11 @@ class Parser
             foreach ($valueRules as $valueRule => $newValue) {
                 if ($value == $valueRule) {
                     $value = $newValue;
-                    dump( $value, $valueRule, $newValue);
                 }
             }
 
             $key = array_keys($schema)[$index];
             $parsed = $this->getValue($type, $value, $key);
-            dump($parsed);
             return [$key => $parsed];
         });
         $all = $flat->all();
@@ -306,6 +314,32 @@ class Parser
         return isset($this->config[$key]) ? $this->config[$key] : $default;
     }
 
+    // parse header:dotted.config to [header, dotted.config]
+    // header to [header, null]
+    static public function parseDottedConfig(string $dottedConfig): array
+    {
+        if (str_contains($dottedConfig, ':')) {
+            [$header, $dottedConfig] = explode(':', $dottedConfig);
+        } else {
+            $header = $dottedConfig;
+            $dottedConfig = null;
+        }
+        return [$header, $dottedConfig];
+
+    }
+    static public function parseConfigHeader(string $config): array
+    {
+        if (!str_contains($config, '?')) {
+            $config .= '?';
+        }
+        [$dottedConfig, $settingsString] = explode('?', $config);
+        [$header, $dottedConfig] = self::parseDottedConfig($dottedConfig);
+
+        $settings = self::parseQueryString($settingsString);
+        return [$header, $dottedConfig, $settings];
+
+    }
+
     /**
      * @param string $type
      * @param string $value
@@ -318,21 +352,11 @@ class Parser
     protected function getValue($config, $value, $key)
     {
         // format: [fieldname:][dottedConfig]?settings
-        if (!str_contains($config, '?')) {
-            $config .= '?';
-        }
-        [$dottedConfig, $settingsString] = explode('?', $config);
-        if (str_contains($dottedConfig, ':')) {
-            [$header, $dottedConfig] = explode(':', $dottedConfig);
-        } else {
-            $header = $key;
-        }
-
-        $settings = self::parseQueryString($settingsString);
 //        if (count($settings)) {
 //            dd($settings);
 //        }
-        if (str_contains($dottedConfig, '.')) {
+        [$header, $dottedConfig, $settings] = self::parseConfigHeader($config);
+        if ($dottedConfig && str_contains($dottedConfig, '.')) {
             [$type, $values] = explode('.', $dottedConfig, 2);
             $parameters = $values; // what's after the .
         } else {

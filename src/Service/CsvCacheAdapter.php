@@ -128,16 +128,19 @@ class CsvCacheAdapter implements AdapterInterface, CacheInterface, LoggerAwareIn
 
     public function save(CacheItemInterface $item): bool
     {
+        return true;
         // TODO: Implement save() method.
     }
 
     public function saveDeferred(CacheItemInterface $item): bool
     {
+        return true;
         // TODO: Implement saveDeferred() method.
     }
 
     public function commit(): bool
     {
+        return true;
         // TODO: Implement commit() method.
     }
 

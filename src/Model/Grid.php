@@ -101,7 +101,7 @@ class Grid
                 assert(array_is_list($row), 'not an list ' . json_encode($row));
                 fputcsv($fp, $row, $delimiter, $enclosure);
             } catch (\Exception $exception) {
-                dd($row, $delimiter);
+                assert(false, "Error fputcsv row");
             }
         }
 
@@ -125,9 +125,9 @@ class Grid
         }
         if (array_is_list($row)) {
 //            dd($this->headers, $row);
-            if (count($this->headers) <> count($row)) {
-                dd($this->headers, $row);
-            }
+//            if (count($this->headers) <> count($row)) {
+//                dd($this->headers, $row);
+//            }
             assert(count($this->headers) == count($row));
             $this->rowData[] = array_combine($this->headers, $row);
         } else {
@@ -191,12 +191,7 @@ class Grid
                 if (count($this->headers) > count($x)) {
                     $x = array_pad($x, count($this->headers), null);
                 }
-                if (count($this->headers) <> count($x)) {
-//                        continue; // skip but we should figure out why
-                    dd($this->headers, $x);
-                } else {
-                    $this->rowData[] = array_combine($this->headers, $x);
-                }
+                $this->rowData[] = array_combine($this->headers, $x);
             } else {
                 $this->headers = $x;
                 $foundHeaders = true;
@@ -204,6 +199,18 @@ class Grid
         }
         fclose($buffer);
         return $this;
+    }
+
+    private function checkCounts($headers, $row): bool {
+        if (count($$headers) <> count($row)) {
+            return false;
+
+//                        continue; // skip but we should figure out why
+//            dd($this->headers, $x);
+        } else {
+            return true;
+        }
+
     }
     public function loadFile(string $filename, int $limit = 0, int $startingAt = 0): self
     {

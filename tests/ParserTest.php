@@ -19,8 +19,7 @@ class ParserTest extends TestCase
 
             $csvString = $test['source'];
             $csvReader = Reader::createFromString($csvString)->setHeaderOffset(0);
-            $schema = Parser::createSchemaFromMap($test['map'] ?? [], $csvReader->getHeader());
-            $config['schema'] = $schema;
+            $config = Parser::createConfigFromMap($test['map'] ?? [], $csvReader->getHeader());
             $config['valueRules'] = $test['valueRules'] ?? [];
             $parser = new Parser($config);
 
@@ -32,6 +31,21 @@ class ParserTest extends TestCase
                 $this->assertSame($expects, $actual, json_encode($expects) . '<>' . json_encode($actual));
                 assert($expects, "invalid json: " . $test['expects']);
             }
+
+    }
+
+    public function testDottedConfig()
+    {
+        $this->assertEquals(Parser::parseDottedConfig('header'), ['header', null]);
+        $this->assertEquals(Parser::parseDottedConfig('header:int'), ['header', 'int']);
+        $this->assertEquals(Parser::parseDottedConfig('header:rel.per'), ['header', 'rel.per']);
+
+        $this->assertEquals(Parser::parseConfigHeader('header:rel.per'), ['header', 'rel.per', []]);
+        $this->assertEquals(Parser::parseConfigHeader('header:rel.per?'), ['header', 'rel.per', []]);
+        $this->assertEquals(
+            $actual=Parser::parseConfigHeader('header:rel.per?max=10'),
+            ['header', 'rel.per', ['max' => 10]],
+            json_encode($actual));
 
     }
 

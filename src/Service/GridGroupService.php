@@ -125,12 +125,15 @@ class GridGroupService
 
 
 
+
+    /** @phpstan-ignore-next-line */
     public function exportAsExcel(GridGroup $gridGroup, string $filename): Xlsx
     {
         if (!class_exists('\PhpOffice\PhpSpreadsheet\Spreadsheet')) {
 
         }
         // @todo: check that class exists and require installation, like twig-extra, so it's not required in every installation
+        /** @phpstan-ignore-next-line */
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $tocSheet = $spreadsheet->getActiveSheet();
         $tocSheet->setTitle("TOC");
@@ -161,10 +164,13 @@ class GridGroupService
 //        $sheet = $spreadsheet->getActiveSheet();
 //        $sheet->fromArray()
 //        $sheet->setCellValue("A1", "Hello World!");
+        /** @phpstan-ignore-next-line */
         $writer = new Xlsx($spreadsheet);
         $writer->save($filename);
         return $writer;
     }
+
+    /** @phpstan-ignore-next-line */
     private function cleanup(Worksheet $sheet, array $fieldNames = [])
     {
 
