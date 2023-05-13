@@ -170,7 +170,7 @@ class Parser
                             'code' => TextType::class,
                             'label' => TextareaType::class,
                             'description' => TextareaType::class,
-                            default => assert(false, $internalCode)
+                            default => assert(false, $internalCode . '/' . $type)
 
                         },
                         'array,',
@@ -197,9 +197,14 @@ class Parser
 //                    }
 
                     $options = [];
-                    $settings['type'] = $type;
-                    $settings['propertyType'] = $propertyType; // for liForm
+
+                    $settings['propertyType'] = $type;
                     $settings['internalCode'] = $internalCode;
+                    // ack! Terrible names.
+                    $settings['formType'] = $propertyType;
+//                    $settings['type'] = $type;
+//                    $settings['propertyType'] = $type; // for liForm
+//                    $settings['internalCode'] = $internalCode;
 
                     if (count($settings)) {
                         $options['attr'] = $settings;
