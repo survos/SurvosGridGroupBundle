@@ -119,6 +119,11 @@ class GridGroup
         );
     }
 
+    public function getGridFilename(Grid $grid)
+    {
+        return rtrim($this->getDir(), '/') . '/' . $grid->getKey();
+    }
+
 
 }
 

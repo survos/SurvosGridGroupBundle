@@ -254,8 +254,12 @@ class CsvDatabase
         assert(count($this->headers), "missing headers");
         $existingFile = $this->getPath();
         if (file_exists($existingFile)) {
+//            $reader = \League\Csv\Reader::createFromPath($existingFile);
+//            $reader->setHeaderOffset(0);
+//            \League\Csv\AbstractCsv::BOM_UTF8
             $reader = new Reader($existingFile, strict: false);
             foreach ($reader->getRow() as $row) {
+//            foreach ($reader->getRecords() as $row) {
 //                dd($row, $existingFile);
                 try {
                     // this could be a trait, too.
@@ -264,6 +268,7 @@ class CsvDatabase
                     // only during dev
                 }
                 GridGroupService::assertKeyExists($this->getKeyName(), $row);
+//                dd($row, array_keys($row), $this->getKeyName());
                 $this->offsetCache->set($row[$this->getKeyName()], $reader->getRowOffset());
             }
         }
