@@ -13,7 +13,7 @@
         "symfony/dependency-injection": "^6.1.0",
         "symfony/http-kernel": "^6.1.0",
         "twig/twig": "^3.4",
-        "league/csv": "^9.0",
+        "league/csv": "^9.9",
         "illuminate/collections": "^10.9",
         "symfony/string": "^6.1.0",
         "symfony/form": "^6.1.0",

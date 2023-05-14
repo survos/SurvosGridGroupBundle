@@ -10,6 +10,7 @@ use SplTempFileObject;
 use Survos\GridGroupBundle\Service\CountableArrayCache;
 use Survos\GridGroupBundle\Service\Reader;
 use Symfony\Component\String\Slugger\AsciiSlugger;
+use League\Csv\Reader as LeagueCsvReader;
 
 class CsvDatabase
 {
@@ -254,9 +255,6 @@ class CsvDatabase
         assert(count($this->headers), "missing headers");
         $existingFile = $this->getPath();
         if (file_exists($existingFile)) {
-//            $reader = \League\Csv\Reader::createFromPath($existingFile);
-//            $reader->setHeaderOffset(0);
-//            \League\Csv\AbstractCsv::BOM_UTF8
             $reader = new Reader($existingFile, strict: false);
             foreach ($reader->getRow() as $row) {
 //            foreach ($reader->getRecords() as $row) {
