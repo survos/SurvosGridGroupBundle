@@ -227,6 +227,7 @@ class Parser
                         $options['allow_add'] = true;
                     }
                     $outputSchema[$column] = array_merge([
+                        'column' => $column,
                         'type' => $dottedConfig,
                     ],
                         $settings);

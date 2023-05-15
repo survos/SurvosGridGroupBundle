@@ -1,13 +1,42 @@
 given:
 
 cache:
+  - db: no-key.csv
+    key: code
+    headers: [code,label]
+
+    steps:
+      - operation: has
+        key: nj
+        expects: false
+
+  - db: key-no-in-headers.csv
+    key: code
+    headers: [label]
+
+    steps:
+      - operation: set
+        key: nj
+        data: {code: 'nj', label: 'New Jersey'}
+        csv: |
+          code,label
+          nj,"New Jersey"
+
+      - operation: set
+        key: va
+        data: {label: 'Virginia'}
+        csv: |
+          code,label
+          nj,"New Jersey"
+          va,Virginia
+
   - db: movie.csv
     key: code
     headers: [code,label]
 
     steps:
       - operation: has
-        key: code
+        key: nj
         expects: false
 
       - operation: set
