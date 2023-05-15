@@ -4,7 +4,7 @@
 
 namespace Survos\GridGroupBundle\Service;
 
-use \Exception;
+use Exception;
 use SplFileObject;
 use SplTempFileObject;
 use Survos\GridGroupBundle\Service\CountableArrayCache;
@@ -67,8 +67,12 @@ class CsvDatabase
     private CountableArrayCache $aliases;
     private int $currentSize = 0;
 
-    public function __construct(private string $filename, private ?string $keyName=null, private array $headers = [], private bool $useGZip = false)
-    {
+    public function __construct(
+        private string $filename,
+        private string $keyName,
+        private array $headers = [],
+        private bool $useGZip = false
+    ) {
         $this->offsetCache = new CountableArrayCache();
         $this->aliases = new CountableArrayCache();
         if (!in_array($this->keyName, $this->headers)) {
@@ -177,9 +181,14 @@ class CsvDatabase
         $file = $this->openFile(static::FILE_APPEND);
         $file->fseek(0, SEEK_END);
         $pos = $file->ftell();
+        $keyName = $this->getKeyName();
+
+        if (!isset($data[$keyName])) {
+            $data = [$keyName => $key] + $data;
+        }
 
         // if it's empty, first write the headers
-        if (count($headers) == 0 || ($headers = [$this->getKeyName()])) {
+        if (count($headers) == 1) {
             $headers = array_keys($data);
             $this->setHeaders($headers);
         }
@@ -198,9 +207,7 @@ class CsvDatabase
         } else {
             $dataValues = array_values($data);
         }
-        if (!array_key_exists($key, $data)) {
-            $data[$this->getKeyName()] = $key;
-        }
+
         // before writing the data, save the position in the offset cache.
         $position = $file->ftell();
 
@@ -454,7 +461,6 @@ class CsvDatabase
         // Fetch the offset
         if ($position = $this->keyOffset($key)) {
             // @todo: move the buffer pointer using fseek and get the record there.
-
         }
 
         // Fetch the key from database
@@ -539,5 +545,4 @@ class CsvDatabase
 
         return true;
     }
-
 }
