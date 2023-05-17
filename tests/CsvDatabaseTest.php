@@ -13,7 +13,7 @@ class CsvDatabaseTest extends TestCase
      */
     public function testCsvDatabase(array $test): void
     {
-        $csvDatabase = new CsvDatabase($test['db'], $test['key'], $test['headers'] ?? []);
+        $csvDatabase = new CsvDatabase($test['db'], $test['key'] ?? null, $test['headers'] ?? []);
         $csvDatabase->flushFile(); // purge?  reset? We need to start with a clean file.
         $csvDatabase->purge();
         foreach ($test['steps'] as $step) {
@@ -27,7 +27,7 @@ class CsvDatabaseTest extends TestCase
                 'delete' => $csvDatabase->delete($key),
                 'replace' => $csvDatabase->replace($key, $data),
                 'set' => $csvDatabase->set($key, (array)$data),
-//                'add_headers' => $csvDatabase->setHeaders(),
+                'add_header' => $csvDatabase->addHeader($step['header']),
 
                 default =>
                 assert(false, "Operation not supported " . $operation)
