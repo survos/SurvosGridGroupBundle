@@ -186,6 +186,7 @@ class Parser
                         'attr' => match ($internalCode) {
                             'int' => NumberType::class,
                             'string' => TextType::class,
+                            'text' => TextareaType::class,
                             'url' => UrlType::class,
                             'date' => DateType::class,
                             default => assert(false, $internalCode)
@@ -238,9 +239,21 @@ class Parser
 
 //                    dd($columnType, $rule);
 //                    break;
+                } else {
                 }
             }
+
             $csvSchema[$column] = $columnType;
+            if (!array_key_exists($column, $outputSchema)) {
+                $columnType = 'att.string';
+                $settings = [];
+                $outputSchema[$column] = array_merge([
+                    'column' => $column,
+                    'type' => $columnType,
+                ], $settings);
+
+            }
+
         }
         return [
             'schema' => $csvSchema,
