@@ -280,6 +280,9 @@ class Parser
         if (count($schema) <> count($columns)) {
 //            dd('columns mismatch', $schema, $columns);
         }
+        if (count($schema) !== count($columns)) {
+            dd($schema, $columns, array_diff(array_keys($schema), array_keys($columns)));
+        }
         assert(count($schema) == count($columns), sprintf("mismatch %d %d", count($schema), count($columns)));
 
         $zipper = collect($columns)->zip($schema);
