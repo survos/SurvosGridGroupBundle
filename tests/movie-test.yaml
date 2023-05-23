@@ -47,6 +47,23 @@ cache:
         key: va
         expects: { id: 'va', label: 'Virginia', population: '' }
 
+  - db: headers.csv
+    steps:
+      - operation: set
+        data: { id: 'nj', label: 'New Jersey', population: '' }
+        csv: |
+          id,label,population
+          nj,"New Jersey",
+
+  - db: headers.csv
+    ignore_clear_db: true
+    steps:
+      - operation: headers
+        expects: ["id", "label", "population"]
+        csv: |
+          id,label,population
+          nj,"New Jersey",
+
   - db: no-key.csv
     key: code
     headers: [code,label]
@@ -66,23 +83,21 @@ cache:
           id_number,label
           nj,"New Jersey"
 
-      - operation: getKeyName
+      - operation: get_key_name
         expects: id_number
 
-      - operation: getKeyAlias
+      - operation: get_key_alias
         expects: "Id Number"
 
-      # set with key
       - operation: set
-        key: va
-        data: { label: 'Virginia' }
+        data: { "Id Number": 'va', label: 'Virginia' }
         csv: |
           id_number,label
           nj,"New Jersey"
           va,Virginia
 
       - operation: set
-        data: { id_number: oh, label: 'Ohio' }
+        data: { id_number: 'oh', label: 'Ohio' }
         csv: |
           id_number,label
           nj,"New Jersey"
@@ -94,79 +109,16 @@ cache:
 
     steps:
       - operation: set
-        key: nj
-        data: {label: 'New Jersey'}
-        csv: |
-          code,label
-          nj,"New Jersey"
-
-      - operation: has
-        key: nj
-        expect: true
-
-      - operation: set
-        key: oh
-        data: {code: 'oh', label: 'Ohio'}
-        csv: |
-          code,label
-          nj,"New Jersey"
-          oh,Ohio
-
-      - operation: set
-        key: va
-        data: {label: 'Virginia'}
-        csv: |
-          code,label
-          nj,"New Jersey"
-          oh,Ohio
-          va,Virginia
-
-  - db: movie.csv
-    key: code
-    headers: [code,label]
-
-    steps:
-      - operation: has
-        key: nj
-        expects: false
-
-  - db: key-no-in-headers.csv
-    key: code
-    headers: [label]
-
-    steps:
-      - operation: set
-        key: nj
         data: {code: 'nj', label: 'New Jersey'}
         csv: |
           code,label
           nj,"New Jersey"
 
-      - operation: set
-        key: va
-        data: {label: 'Virginia'}
-        csv: |
-          code,label
-          nj,"New Jersey"
-          va,Virginia
-
-  - db: no-headers-provided.csv
-    key: code
-
-    steps:
-      - operation: set
-        key: nj
-        data: {label: 'New Jersey'}
-        csv: |
-          code,label
-          nj,"New Jersey"
-
       - operation: has
         key: nj
         expect: true
 
       - operation: set
-        key: oh
         data: {code: 'oh', label: 'Ohio'}
         csv: |
           code,label
@@ -174,8 +126,7 @@ cache:
           oh,Ohio
 
       - operation: set
-        key: va
-        data: {label: 'Virginia'}
+        data: {code: 'va', label: 'Virginia'}
         csv: |
           code,label
           nj,"New Jersey"
@@ -192,7 +143,6 @@ cache:
         expects: false
 
       - operation: set
-        key: nj
         data: {code: 'nj', label: 'New Jersey'}
         csv: |
           code,label
@@ -203,7 +153,6 @@ cache:
         expects: true
 
       - operation: set
-        key: va
         data: {code: 'va', label: 'Virginia'}
         csv: |
           code,label
@@ -211,7 +160,6 @@ cache:
           va,Virginia
 
       - operation: set
-        key: oh
         data: {code: 'oh', label: 'Ohoi'}
         csv: |
           code,label
@@ -220,7 +168,6 @@ cache:
           oh,Ohoi
 
       - operation: set
-        key: ma
         data: {code: 'ma', label: 'Maine'}
         csv: |
           code,label

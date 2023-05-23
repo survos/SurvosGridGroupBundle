@@ -76,8 +76,15 @@ class CsvDatabase
         $this->offsetCache = new CountableArrayCache();
         $this->aliases = new CountableArrayCache();
 
-        if (!in_array($this->keyName, $this->headers)) {
-            array_unshift($this->headers, $this->keyName);
+        if (file_exists($this->filename)) {
+            $reader = new Reader($this->getFilename());
+            $this->setHeaders($reader->getHeaders());
+        }
+
+        if (!is_null($this->keyName)) {
+            if (!in_array($this->keyName, $this->headers)) {
+                array_unshift($this->headers, $this->keyName);
+            }
         }
     }
 
@@ -134,6 +141,14 @@ class CsvDatabase
     }
 
     /**
+     * @return string|false|int
+     */
+    public function getKeyAlias(): string|false|int
+    {
+        return array_search($this->getKeyName(), $this->aliases->getCache());
+    }
+
+    /**
      * @return array
      */
     public function getHeaders(): array
@@ -153,10 +168,6 @@ class CsvDatabase
 
     public function addHeader(string $label): self
     {
-        //Something like this
-        //something_like_this
-
-        // @todo: define column schema
         $slugger = new AsciiSlugger();
         $header = $slugger->slug($label)->toString();
         $this->headers[] = $header;
@@ -273,7 +284,7 @@ class CsvDatabase
 
     public function loadOffsetCache()
     {
-        assert(count($this->headers), "missing headers");
+//        assert(count($this->headers), "missing headers");
         $existingFile = $this->getPath();
         if (file_exists($existingFile)) {
             $reader = new Reader($existingFile, strict: false);
@@ -509,7 +520,12 @@ class CsvDatabase
         // Check if keyName was set and if not search for id field in data array
         if (!$this->getKeyName()) {
             foreach (array_keys($data) as $item) {
-                if (preg_match('(id|Id|ID)', $item)) {
+                if (preg_match('/id$/i', $item)) {
+//                    if ($this->aliases->contains($item)) {
+//                        $this->setKeyName($this->aliases->get($item));
+//                        break;
+//                    }
+
                     $this->setKeyName($item);
                     break;
                 }
@@ -520,11 +536,12 @@ class CsvDatabase
             throw new Exception("You need to set 'keyName' parameter or provide id field in data array!");
         }
 
+        assert(array_key_exists($this->getKeyName(), $data), sprintf("Missing key %s in %s", $this->getKeyName(), $this->getFilename()));
         $key = $data[$this->getKeyName()];
 
         // Check if new headers provided and add them if so
         if ($diff = array_diff(array_keys($data), $this->getHeaders())) {
-            if (file_exists($this->getFilename())) {
+            if (file_exists($this->getFilename()) && !empty($diff)) {
                 foreach ($diff as $header) {
                     $this->addHeader($header);
                 }
