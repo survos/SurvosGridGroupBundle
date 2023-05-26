@@ -1,0 +1,41 @@
+trim:
+  - file: no-changes.csv
+    steps:
+        raw:
+          cityId,label
+          nj,"New Jersey"
+        expected:
+          cityId,label
+          nj,"New Jersey"
+
+  - file: empty-rows-at-end.csv
+    steps:
+      raw:
+        cityId,label
+        nj,"New Jersey"
+        ,,
+        ,,,
+      expected:
+        cityId,label
+        nj,"New Jersey"
+
+  - file: empty-columns-at-end.csv
+    steps:
+      raw:
+        cityId,label,,
+        nj,"New Jersey",
+      expected:
+        cityId,label
+        nj,"New Jersey"
+
+#  - file: headers-not-on-first-row.csv
+#    steps:
+#      headerRegex: cityId
+#      raw:
+#        City List
+#        (copyright) ABC Core
+#        cityId,label,,
+#        nj,"New Jersey",
+#      expected:
+#        cityId,label
+#        nj,"New Jersey"
