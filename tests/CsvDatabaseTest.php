@@ -45,6 +45,11 @@ class CsvDatabaseTest extends TestCase
                 $this->assertSame($csv, file_get_contents($csvDatabase->getFilename()));
             }
         }
+
+        if (!isset($test['ignore_flush_db_after'])) {
+            $csvDatabase->flushFile();
+            $csvDatabase->purge();
+        }
     }
 
     public static function csvSteps()

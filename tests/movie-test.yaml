@@ -48,6 +48,7 @@ cache:
         expects: { id: 'va', label: 'Virginia', population: '' }
 
   - db: headers.csv
+    ignore_flush_db_after: true
     steps:
       - operation: set
         data: { id: 'nj', label: 'New Jersey', population: '' }
@@ -78,9 +79,9 @@ cache:
 
     steps:
       - operation: set
-        data: { "Id Number": 'nj', label: 'New Jersey' }
+        data: { "Number Id": 'nj', label: 'New Jersey' }
         csv: |
-          id_number,label
+          number_id,label
           nj,"New Jersey"
 
       - operation: get_key_name
@@ -90,16 +91,16 @@ cache:
         expects: "Id Number"
 
       - operation: set
-        data: { "Id Number": 'va', label: 'Virginia' }
+        data: { "Number Id": 'va', label: 'Virginia' }
         csv: |
-          id_number,label
+          number_id,label
           nj,"New Jersey"
           va,Virginia
 
       - operation: set
-        data: { id_number: 'oh', label: 'Ohio' }
+        data: { number_id: 'oh', label: 'Ohio' }
         csv: |
-          id_number,label
+          number_id,label
           nj,"New Jersey"
           va,Virginia
           oh,Ohio
@@ -201,3 +202,26 @@ cache:
           va,Virginia,
           oh,Ohio,
           ma,Maine,
+
+  - db: new-header-in-between.csv
+    key: code
+    headers: [ code,label ]
+    steps:
+      - operation: set
+        data: {code: 'oh', label: 'Ohio'}
+        csv: |
+          code,label
+          oh,Ohio
+
+      - operation: set
+        data: { code: 'oh', population: 1, label: 'Ohio' }
+        csv: |
+          code,population,label
+          oh,1,Ohio
+
+      - operation: set
+        data: { code: 'ma', population: 1, label: 'Maine' }
+        csv: |
+          code,population,label
+          oh,1,Ohio
+          ma,1,Maine
