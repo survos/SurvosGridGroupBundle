@@ -5,6 +5,9 @@
 namespace Survos\GridGroupBundle\Service;
 
 use Exception;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
+use Psr\Log\LoggerInterface;
 use SplFileObject;
 use SplTempFileObject;
 use Survos\GridGroupBundle\Service\CountableArrayCache;
@@ -12,8 +15,9 @@ use Survos\GridGroupBundle\Service\Reader;
 use Symfony\Component\String\Slugger\AsciiSlugger;
 use League\Csv\Reader as LeagueCsvReader;
 
-class CsvDatabase
+class CsvDatabase implements LoggerAwareInterface
 {
+    use LoggerAwareTrait;
     /**
      * File read flag.
      *
@@ -77,16 +81,8 @@ class CsvDatabase
         $this->offsetCache = new CountableArrayCache();
         $this->aliases = new CountableArrayCache();
 
-        if (file_exists($this->filename)) {
-            $this->reader = new Reader($this->getFilename());
-            $this->setHeaders($this->reader->getHeaders());
-        }
+        $this->refresh();
 
-        if (!is_null($this->keyName)) {
-            if (!in_array($this->keyName, $this->headers)) {
-                array_unshift($this->headers, $this->keyName);
-            }
-        }
     }
 
     public function reset()
@@ -94,6 +90,22 @@ class CsvDatabase
         $filename = $this->getPath();
         if (file_exists($filename)) {
             unlink($filename);
+        }
+    }
+
+    public function refresh()
+    {
+        $this->offsetCache->flush();
+        $this->aliases->flush();
+        if (file_exists($this->filename)) {
+            $this->reader = new Reader($this->getFilename());
+            $this->setHeaders($this->reader->getHeaders());
+        }
+
+        if (!is_null($this->keyName)) {
+            if (!in_array($this->keyName, $this->headers)) {
+//                array_unshift($this->headers, $this->keyName);
+            }
         }
     }
 
@@ -162,6 +174,11 @@ class CsvDatabase
         return $this->headers;
     }
 
+    public function hasHeaders(): bool
+    {
+        return count($this->headers) > 0;
+    }
+
     /**
      * @param array $headers
      * @return CsvDatabase
@@ -174,6 +191,7 @@ class CsvDatabase
 
     public function addHeader(string $label): self
     {
+//        assert(false);
         $slugger = new AsciiSlugger();
         $header = $slugger->slug($label)->toString();
         $this->headers[] = $header;
@@ -212,14 +230,19 @@ class CsvDatabase
         $file = $this->openFile(static::FILE_APPEND);
         $file->fseek(0, SEEK_END);
         $pos = $file->ftell();
+        $emptyFile = $pos == 0;
+        if ($emptyFile) {
+
+        }
         $keyName = $this->getKeyName();
 
-        if (!isset($data[$keyName])) {
+        if (empty($data[$keyName])) {
+            assert(false, "data must contain key " . $keyName);
             $data = [$keyName => $key] + $data;
         }
 
         // if it's empty, first write the headers
-        if (count($headers) == 1) {
+        if (count($headers) <= 1) {
             $headers = array_keys($data);
             $this->setHeaders($headers);
         }
@@ -292,8 +315,9 @@ class CsvDatabase
     {
         static $reader = null;
         if (!$reader) {
-            return new Reader($this->getPath());
+            $reader = new Reader($this->getPath());
         }
+        return $reader;
 
     }
 
@@ -566,17 +590,41 @@ class CsvDatabase
         assert(array_key_exists($this->getKeyName(), $data), sprintf("Missing key %s in %s", $this->getKeyName(), $this->getFilename()));
         $key = $data[$this->getKeyName()];
 
+        if (!$this->hasHeaders()) {
+            $this->setHeaders(array_keys($data));
+        }
+
         // Check if new headers provided and add them if so
-        if ($diff = array_diff(array_keys($data), $this->getHeaders())) {
+        if (file_exists($this->getFilename()) && $diff = array_diff(array_keys($data), $this->getHeaders())) {
 //            if (file_exists($this->getFilename()) && !empty($diff)) {
             if (!empty($diff)) {
-                foreach ($diff as $header) {
-                    if (file_exists($this->getFilename())) {
-                        $this->addHeader($header);
+                $existingReader = \League\Csv\Reader::createFromPath($this->getFilename());
+                $writer = \League\Csv\Writer::createFromPath($newFilename = $this->getFilename() . '-new', 'w+');
+                assert($this->logger, "call setLogger()");
+                $this->logger->warning("adding headers " . join(',', $diff) . ' to ' .  $this->getFilename());
+                foreach ($existingReader->getIterator() as $idx => $row)
+                {
+                    if ($idx == 0) {
+                        $row = array_merge($row, $diff);
+                        $writer->insertOne($row);
                     } else {
-                        $this->headers[] = $header;
+                        $row = array_pad($row, count($diff), null );
+                        $writer->insertOne($row);
                     }
                 }
+                // remove the original and rename the new one.
+                unlink($this->getFilename());
+                rename($newFilename, $this->getFilename());
+                $this->refresh();
+
+//                dd($diff, 'need to rewrite ' . $this->getFilename());
+//                foreach ($diff as $header) {
+//                    if (file_exists($this->getFilename())) {
+//                        $this->addHeader($header);
+//                    } else {
+//                        $this->headers[] = $header;
+//                    }
+//                }
             }
         }
 
