@@ -323,6 +323,7 @@ class CsvDatabase implements LoggerAwareInterface
 
     public function loadOffsetCache()
     {
+
 //        assert(count($this->headers), "missing headers");
         $existingFile = $this->getPath();
         if (file_exists($existingFile)) {
@@ -336,7 +337,7 @@ class CsvDatabase implements LoggerAwareInterface
                 } catch (\Exception) {
                     // only during dev
                 }
-                GridGroupService::assertKeyExists($this->getKeyName(), $row);
+                GridGroupService::assertKeyExists($this->getKeyName(), $row, $this->getFilename());
 //                dd($row, array_keys($row), $this->getKeyName());
                 $this->offsetCache->set($row[$this->getKeyName()], $reader->getRowOffset());
             }
@@ -517,8 +518,15 @@ class CsvDatabase implements LoggerAwareInterface
     {
         // Fetch the offset
         if ($position = $this->keyOffset($key)) {
+            assert($this->reader, $this->getFilename());
             $this->reader->setCurrentBufferPosition($position);
             $row = $this->reader->getCsvRow();
+            $headers = $this->getHeaders();
+            assert(count($headers) == count($row),
+                json_encode($row) .
+                sprintf(" %s mismatch at %d %d headers %d columns", $this->getFilename(),
+                    $position,
+                    count($headers), count($row)));
             return array_combine($this->headers, $row);
             // @todo: move the buffer pointer using fseek and get the record there.
         }

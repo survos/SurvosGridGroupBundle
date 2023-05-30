@@ -128,7 +128,9 @@ class Grid
 //            if (count($this->headers) <> count($row)) {
 //                dd($this->headers, $row);
 //            }
-            assert(count($this->headers) == count($row));
+            $headers = $this->getHeaders();
+            assert(count($headers) == count($row), sprintf("mismatch %d %d", count($headers), count($row)));
+
             $this->rowData[] = array_combine($this->headers, $row);
         } else {
             // add new headers, this only works if the row is a key, not the header string.
