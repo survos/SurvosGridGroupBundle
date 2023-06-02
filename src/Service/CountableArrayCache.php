@@ -43,6 +43,10 @@ class CountableArrayCache
      */
     public function set($key, $data)
     {
+        if ($key == 'inscription') {
+            $key = $key;
+            assert($key <> 'inscription', "Bad key " . $key);
+        }
         $this->cache[$key] = $data;
     }
 

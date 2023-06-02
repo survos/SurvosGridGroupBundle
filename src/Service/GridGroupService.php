@@ -79,6 +79,57 @@ class GridGroupService
         return $gridGroup;
     }
 
+    static public function validate(string $filename): ?array
+    {
+
+        if (!file_exists($filename)) {
+            return null;
+        }
+$row = 1;
+if (($handle = fopen($filename, "r")) !== FALSE) {
+    while (($data = fgetcsv($handle)) !== FALSE) {
+        if ($row == 1) {
+            $headers = $data;
+            $headerCount = count($headers);
+        } else {
+            if ($headerCount <> count($data)) {
+//                dd(headers: $headers, row: $data, idx: $row);
+            }
+            assert($headerCount == count($data), ' mismatch, line ' . $row);
+        }
+        $row++;
+    }
+    fclose($handle);
+}
+        $reader = \League\Csv\Reader::createFromPath($filename)
+//            ->skipEmptyRecords()
+//            ->setHeaderOffset(0)
+        ;
+//        $headers = $reader->getHeader();
+        foreach ($reader->getIterator() as $idx => $record) {
+            if ($idx == 0) {
+                $headers = $record;
+                $headerCount = count($headers);
+            } else {
+//                $diff = array_diff($headers, $record);
+//                if (count($diff)) {
+//                    dd(diff: $diff, idx: $idx);
+//                }
+                if ($headerCount <> count($record)) {
+//                    dd(headers: $headers, row: $record, idx: $idx, msg: 'using csvReader getIterator');
+                    return [$headers, $record, $idx];
+                }
+
+                assert($headerCount == count($record), ' mismatch, line ' . $idx);
+            }
+//            dd($record, $headers);
+
+//            dump($idx, $record);
+        }
+
+        return null;
+    }
+
 
     // includes the header row.
     static public function countCsvRows(string $filename)
