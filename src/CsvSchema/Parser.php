@@ -142,6 +142,9 @@ class Parser
             foreach ($map as $regEx => $rule) {
                 if (preg_match($regEx, $column))
                 {
+                    if (is_null($rule)) {
+                        // ignore?
+                    }
                     // this may be outdated
                     if (str_contains($rule, $fieldNameDelimiter)) { // } && !str_starts_with($rule, 'array:')) {
                         [$column, $rule] = explode($fieldNameDelimiter, $rule, 2);
@@ -524,7 +527,7 @@ class Parser
      */
     protected function parseArray($string, string $delimiter=","): array
     {
-        return explode($delimiter, trim($string));
+        return strlen($string) ? explode($delimiter, trim($string)) : [];
     }
 
     protected function parseDb($string, string $delimiter=","): string

@@ -32,7 +32,6 @@ class ParserTest extends TestCase
             }
 
             if ($expectedSchema = $test['schema']??false) {
-                $actual = $config['schema'];
                 $expects = json_decode($expectedSchema, true);
                 assert($expects, "invalid json string: " . $expectsJson);
                 $this->assertSame($expects, $actual, json_encode($expects) . '<>' . json_encode($actual));
