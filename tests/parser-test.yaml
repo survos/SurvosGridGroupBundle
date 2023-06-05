@@ -1,5 +1,41 @@
 tests:
   - source: |
+      objekt_id,objekt_name
+      123,One Two Three
+    map:
+        /^objekt_id/i: db.code
+        /^obje(k|c)t_name/i: db.label
+    expects: |
+      {"objekt_id":"123","objekt_name":"One Two Three"}
+    schema:
+      objekt_id: objekt_name:db.code
+      objekt_name: objekt_name:db.label
+
+  - source: |
+      objekt_id,objekt_name
+      123,One Two Three
+    map:
+      /^objekt_id/i: id:db.code
+      /^obje(k|c)t_name/i: name:db.label
+      /^obje(k|c)t_description$/: description:db.description
+    expects: |
+      {"id":"123","name":"One Two Three"}
+
+
+  - source: |
+      wiki:db.code,name:db.label
+      Q392,Bob Dylan
+    expects: |
+      {"wiki":"Q392","name":"Bob Dylan"}
+    
+
+#  - source: |
+#      name,age:int,hobbies:array(|)
+#      bob,22,chess|frisbee
+#    expects: |
+#      {"name":"bob","age":22, "hobbies": ["chess","frisbee"]}
+
+  - source: |
       name,age
       bob,22
     expects: |
@@ -33,3 +69,8 @@ tests:
     expects: |
       {"name":"bob","hobbies":["golf","poker"]}
 
+#  - source: |
+#      room,colors:array?delim=,
+#      kitchen,"golden rod,blue"
+#    expects: |
+#      {"room":"kitchen","colors":["golden rod","blue"]}

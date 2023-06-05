@@ -25,6 +25,13 @@
             "Survos\\GridGroupBundle\\": "src/"
         }
     },
+    "extra": {
+        "symfony": {
+            "allow-contrib": "true",
+            "require": "^6.3"
+        }
+    },
+
     "require-dev": {
         "phpstan/phpstan": "^1.8",
         "symfony/browser-kit": "^6.1.0",

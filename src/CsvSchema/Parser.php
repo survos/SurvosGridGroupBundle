@@ -120,11 +120,19 @@ class Parser
 
         // create the map from the headers
         foreach ($headers as $column) {
+            // if the last character is a symbol, process it
             if (str_contains($column, ':')) {
                 [$newColumn, $rule] = explode(':', $column);
                 $map["/^$newColumn$/"] = $rule;
             } else {
                 $newColumn = u($column)->snake()->toString(); // default
+            }
+
+            $lastChar = substr($newColumn, -1);
+            if (in_array($lastChar, ['|', '$', ',', '/'])) {
+                $newColumn = rtrim($column, $lastChar);
+                $map["/^$newColumn$/"] = "array($lastChar)";
+
             }
             $columns[] = $newColumn;
         }
@@ -161,10 +169,17 @@ class Parser
                     if (count($settings)) {
 //                        $columnType = json_encode($settings);
 //                        $outputHeader .= ':' . $columnType;
-                        $outputHeader .= '?' . http_build_query($settings);
+//                        $outputHeader .= '?' . http_build_query($settings);
 //                        dd($outputHeader);
                     }
                     $propertyType = TextType::class;
+                    // consider https://symfony.com/doc/current/components/expression_language.html#extending-the-expressionlanguage
+                    if (preg_match('/(.*?)(\(.*?\))/', $type, $m)) {
+                        $type = $m[1];
+                        $params = $m[2];
+                    } else {
+                        $params = null;
+                    }
                     $propertyType = match($type) {
                         'db' => match($internalCode) {
                             'code' => TextType::class,
@@ -173,9 +188,8 @@ class Parser
                             default => assert(false, $internalCode . '/' . $type)
 
                         },
-                        'array,',
-                        'array|',
                         'rel'  =>  CollectionType::class,
+                        'array|',
                         'array' => TextType::class, // join values with delimiter in formatter for output
                         'string' => TextType::class,
                         'cat' => TextType::class, // really a relationship to the cat table -- choice?
@@ -203,15 +217,16 @@ class Parser
                     $settings['internalCode'] = $internalCode;
                     // ack! Terrible names.
                     $settings['formType'] = $propertyType;
-//                    $settings['type'] = $type;
-//                    $settings['propertyType'] = $type; // for liForm
-//                    $settings['internalCode'] = $internalCode;
+                    $settings['type'] = $type;
+                    $settings['propertyType'] = $type; // for liForm
+                    $settings['internalCode'] = $internalCode;
 
                     if (count($settings)) {
                         $options['attr'] = $settings;
 //                        $columnType = json_encode($settings);
 //                        $outputHeader .= ':' . $columnType;
-                        $outputHeader .= '?' . http_build_query($settings);
+//                        dd($settings, $column, $type);
+//                        $outputHeader .= '?' . http_build_query($settings);
 //                        dd($outputHeader);
                     }
 
@@ -221,7 +236,8 @@ class Parser
                     }
                     if (count($settings)) {
                         $options['attr'] = $settings;
-                        $outputHeader .= '?' . http_build_query($settings);
+//                        dd($settings, $outputHeader);
+//                        $outputHeader .= '?' . http_build_query($settings);
                     }
 
                     if ($propertyType == CollectionType::class) {
@@ -236,8 +252,7 @@ class Parser
                     $columnType = $outputHeader;
 //                    dd($type, $rule, $settings, $values, $columnType, $outputHeader);
                     assert($type);
-
-//                    dd($columnType, $rule);
+//                    dump($columnType, $rule);
 //                    break;
                 } else {
                 }
@@ -248,6 +263,7 @@ class Parser
                 $columnType = 'att.string';
                 $settings = [];
                 $outputSchema[$column] = array_merge([
+                    'dottedConfig' => $dottedConfig,
                     'column' => $column,
                     'type' => $columnType,
                 ], $settings);
@@ -281,7 +297,7 @@ class Parser
 //            dd('columns mismatch', $schema, $columns);
         }
         if (count($schema) !== count($columns)) {
-            dd($schema, $columns, array_diff(array_keys($schema), array_keys($columns)));
+//            dd($schema, $columns, array_diff(array_keys($schema), array_keys($columns)));
         }
         assert(count($schema) == count($columns), sprintf("mismatch %d %d", count($schema), count($columns)));
 
@@ -324,9 +340,9 @@ class Parser
             if ($idx == 0 && ($this->getConfigValue('skipTitle', $this->skipTitle))) {
                 continue;
             }
-
-//            dd($this->config['schema']);
+//            dump($this->config['schema'], json_encode($this->config['schema']));
             $parsedRow = $this->parseRow($row);
+//            dd($parsedRow);
             yield $parsedRow;
         }
 
@@ -416,7 +432,14 @@ class Parser
         } else {
             throw new UnsupportedTypeException($type);
         }
-        return call_user_func_array($method, [$value, $parameters, $settings]);
+        try {
+//            dump($method, $value, $parameters, $settings);
+            return call_user_func_array($method, [$value, $parameters, $settings]);
+        } catch (\Exception $exception) {
+            assert(false, $exception->getMessage());
+//            dd($method, $value, $parameters, $settings);
+            return null;
+        }
     }
 
     /**
@@ -499,9 +522,14 @@ class Parser
      *
      * @return array
      */
-    protected function parseArray($string, $delimiter=",")
+    protected function parseArray($string, string $delimiter=","): array
     {
         return explode($delimiter, trim($string));
+    }
+
+    protected function parseDb($string, string $delimiter=","): string
+    {
+        return $string;
     }
 
     /**

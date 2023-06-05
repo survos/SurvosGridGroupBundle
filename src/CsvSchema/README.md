@@ -1,5 +1,48 @@
 # CSV Schema Parser
 
+The Survos Csv Schema Parser is based heavily on https://github.com/ksassnowski/csv-schema
+
+The biggest differences:
+
+* Parsing rules can be embedded in the column headers
+* There is a data column map that allows mapping column _values_, e.g \N to null
+* Arrays are handled slightly differently
+* JSON support (eventually)
+* Relations between tables/grids are supported.
+
+## Installation
+
+The parser is part of GridGroupBundle, but it can be called separately
+
+```bash
+composer require survos/grid-group-bundle
+```
+
+## Usage
+
+The most consise way to define the schema is to embed the column definitions in the header itself.  The header is broken into these parts:
+
+    column:type?settings
+    column:rel.relatedGrid?settings
+    column:type.typeConfig?settings
+
+Where type is bool|int|array|rel
+
+When type is rel (a relative table), the token following the dot is the related grid name.
+
+
+Alternatively, a schema map can be provided, a set of regex patterns that match the column names and apply the rule.  This is 
+
+In the original code (ksassnowski), the schema of the CSV file was defined as an associative array where the keys
+define what properties will be named on the resulting object. The values specify the data type of that column.
+The schema is ordered, meaning the first entry in the schema will correspond to the first column in the CSV and so on.
+This method may be removed.
+
+```php
+<?php
+
+
+
 [![Build Status](https://travis-ci.org/ksassnowski/csv-schema.svg?branch=master)](https://travis-ci.org/ksassnowski/csv-schema)
 [![Code Climate](https://codeclimate.com/github/ksassnowski/csv-schema/badges/gpa.svg)](https://codeclimate.com/github/ksassnowski/csv-schema)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/ksassnowski/csv-schema/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/ksassnowski/csv-schema/?branch=master)
@@ -11,6 +54,7 @@ Have you ever wanted to have something like an ORM but for CSV files? No? Well n
 
 Introducing **CSV Schema Parser**. The number one way to turn your boring old CSV files into kick-ass PHP objects.
 And as if that wasn't amazing enough, it also casts your data to the correct data type! How cool is that? Not very cool you say? Well I disagree!
+
 
 ## Installation
 

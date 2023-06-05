@@ -2,14 +2,9 @@
 
 namespace Survos\GridGroupBundle\Service;
 
-use App\Entity\Catalog;
-use App\Entity\Sheet;
 use Doctrine\Persistence\ManagerRegistry;
 use Goutte\Client;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Psr\Log\LoggerInterface;
-use Survos\CrawlerBundle\Model\Link;
 use Survos\GridGroupBundle\Model\Grid;
 use Survos\GridGroupBundle\Model\GridGroup;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -20,6 +15,7 @@ use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\String\Slugger\SluggerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use function Symfony\Component\String\u;
+use League\Csv\Reader;
 
 class GridGroupService
 {
@@ -66,8 +62,10 @@ class GridGroupService
         $gridGroup = (new GridGroup($groupCode, dir: $groupDir));
         foreach ($finder->in($groupDir) as $file) {
             assert(!$file->isDir(), "only files (csv, to create a grid or sheet), not " . $file->getRealPath());
+//            assert(false, "csvRader or our reader or csvDatabase? " . $groupDir);
 
-            $headers = (new Reader($file->getRealPath()))->getHeaders();
+//            $headers = (new Reader($file->getRealPath()))->getHeaders();
+            $headers = Reader::createFromPath($file->getRealPath())->setHeaderOffset(0)->getHeader();
             assert(is_array($headers), $file->getRealPath());
             $name = $file->getFilenameWithoutExtension();
             if ($excludePattern && preg_match($excludePattern, $file->getRealPath())) {
@@ -93,7 +91,7 @@ if (($handle = fopen($filename, "r")) !== FALSE) {
             $headerCount = count($headers);
         } else {
             if ($headerCount <> count($data)) {
-//                dd(headers: $headers, row: $data, idx: $row);
+                dd(headers: $headers, row: $data, line: $row . ' of file ' . $filename);
             }
             assert($headerCount == count($data), ' mismatch, line ' . $row);
         }
@@ -264,6 +262,19 @@ if (($handle = fopen($filename, "r")) !== FALSE) {
         return $writer;
     }
 
+    public static function csvToArray(string $csv, bool $isFile=false): array
+    {
+        $reader = $isFile ? Reader::createFromPath($csv): Reader::createFromString($csv);
+        $reader->setHeaderOffset(0);
+        // @todo: replace with reduce?
+//        $rows = array_reduce($reader->getIterator(), fn($rows, $row) => $rows[] = $row, [] );
+        $rows = [];
+        foreach ($reader->getIterator() as $row) {
+            $rows = $row;
+        }
+        return $rows;
+
+    }
     /** @phpstan-ignore-next-line */
     private function cleanup(Worksheet $sheet, array $fieldNames = [])
     {
@@ -276,7 +287,6 @@ if (($handle = fopen($filename, "r")) !== FALSE) {
         foreach ($sheet->getColumnIterator() as $column) {
             $sheet->getColumnDimension($column->getColumnIndex())->setAutoSize(true);
         }
-
 
 //Retrieve Highest Column (e.g AE)
         $highestColumn = $sheet->getHighestColumn();

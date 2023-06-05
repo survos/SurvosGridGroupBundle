@@ -18,6 +18,7 @@ use League\Csv\Reader as LeagueCsvReader;
 class CsvDatabase implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
+
     /**
      * File read flag.
      *
@@ -72,16 +73,21 @@ class CsvDatabase implements LoggerAwareInterface
     private int $currentSize = 0;
 
     public function __construct(
-        private string $filename,
+        private string  $filename,
         private ?string $keyName = null,
-        private array $headers = [],
-        private bool $useGZip = false,
+        private array   $headers = [],
+        private bool $purge = false,
+        private bool    $useGZip = false,
         private ?Reader $reader = null,
-    ) {
+    )
+    {
         $this->offsetCache = new CountableArrayCache();
         $this->aliases = new CountableArrayCache();
-
-        $this->refresh();
+        if ($this->purge) {
+            $this->reset();
+        } else {
+            $this->refresh();
+        }
 
     }
 
@@ -90,6 +96,7 @@ class CsvDatabase implements LoggerAwareInterface
     {
         return $this->offsetCache;
     }
+
     public function reset(): self
     {
         $filename = $this->getPath();
@@ -104,6 +111,8 @@ class CsvDatabase implements LoggerAwareInterface
     {
         $this->offsetCache->flush();
         $this->aliases->flush();
+        $this->headers = [];
+
         if (file_exists($this->filename)) {
             $this->reader = new Reader($this->getFilename());
             $this->setHeaders($this->reader->getHeaders());
@@ -347,7 +356,7 @@ class CsvDatabase implements LoggerAwareInterface
                     } else {
                         $row = array_pad($row, count($newHeaders), json_encode($diff));
                         assert(count($row) == count($newHeaders));
-                        $newRows[] =  $row;
+                        $newRows[] = $row;
                     }
                 }
                 $writer->insertAll($newRows); // also does flush
@@ -572,7 +581,7 @@ class CsvDatabase implements LoggerAwareInterface
      *
      * @return mixed
      */
-    public function get(string $key)
+    public function get(string $key): mixed
     {
         // Fetch the offset
         if ($position = $this->keyOffset($key)) {
@@ -588,6 +597,7 @@ class CsvDatabase implements LoggerAwareInterface
             return array_combine($this->headers, $row);
             // @todo: move the buffer pointer using fseek and get the record there.
         }
+        return null;
         assert(false, "maybe call has before get?  data does not exist");
 
         // Fetch the key from database
@@ -620,35 +630,39 @@ class CsvDatabase implements LoggerAwareInterface
      * @return CsvDatabase
      * @throws Exception
      */
-    public function set(string|array|null $key = null, array $data = []): self
+    public function set(array|object|null $data = null, string $key = null): self
     {
-
-        if (is_array($key)) {
-            assert(!array_is_list($key), "Must pass a hash as key, not a list");
-            $data = $key;
-            $key = $data[$this->getKeyName()];
-        } else {
-            if ($this->getKeyName()) {
-                assert($key = $this->getKeyName());
-            } else {
-                if (is_string($key)) {
-                    $this->setKeyName($key);
-                }
-            }
-            // throw deprecation?
+        if (!$key) {
+//            $key = $this->getKeyName();
         }
-        assert($key <> 'inscription', "Bad key " . $key);
-        // Check if keyName was set and if not search for id field in data array
-        if (!$this->getKeyName()) {
-            foreach (array_keys($data) as $item) {
-                if (preg_match('/id$/i', $item)) {
-//                    if ($this->aliases->contains($item)) {
-//                        $this->setKeyName($this->aliases->get($item));
-//                        break;
-//                    }
+//        assert($key = $this->getKeyName());
 
-                    $this->setKeyName($item);
-                    break;
+//        if (is_array($key)) {
+//            assert(!array_is_list($key), "Must pass a hash as key, not a list");
+//            $data = $key;
+//            assert($this->getKeyName(), "missing keyname in " . $this->getFilename());
+//            $key = $data[$this->getKeyName()];
+//        } else {
+//            if ($this->getKeyName()) {
+//                assert($key = $this->getKeyName());
+//            } else {
+//                if (is_string($key)) {
+//                    $this->setKeyName($key);
+//                }
+//            }
+//            // throw deprecation?
+//        }
+//        assert($key <> 'inscription', "Bad key " . $key);
+        // Check if keyName was set and if not search for id field in data array
+
+        if (!$key) {
+            // we need a keyname.
+            if (!$keyName = $this->getKeyName()) {
+                foreach (array_keys($data) as $item) {
+                    if (preg_match('/id$/i', $item)) {
+                        $this->setKeyName($item);
+                        break;
+                    }
                 }
             }
         }
@@ -656,6 +670,7 @@ class CsvDatabase implements LoggerAwareInterface
         if (!$this->getKeyName()) {
             throw new Exception("You need to set 'keyName' parameter or provide id field in data array!");
         }
+
 
         assert(array_key_exists($this->getKeyName(), $data), sprintf("Missing key %s in %s", $this->getKeyName(), $this->getFilename()));
         $keyValue = $data[$this->getKeyName()];
