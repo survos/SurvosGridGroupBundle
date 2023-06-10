@@ -139,6 +139,7 @@ class Parser
 
         foreach ($columns as $column) {
             $columnType = 'string';
+            $dottedConfig = 'att.string'; //?
             foreach ($map as $regEx => $rule) {
                 if (preg_match($regEx, $column))
                 {
