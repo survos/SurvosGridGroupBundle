@@ -164,7 +164,7 @@ class Parser
                     if ($type == '') {
                         $type = 'string';
                     }
-                    $outputHeader = $settings['header']??$newColumn;
+                    $outputHeader = $settings['header']??$column;
                     $outputHeader .= $fieldNameDelimiter . $dottedConfig;
                     if ($columnType) {
 //                        $outputHeader .= ':' . $columnType;
@@ -292,9 +292,13 @@ class Parser
         if (empty($this->config)) {
 
         }
+//        if ($this->config['schema']??false) {
+//            dd(existing_schema_in_config: $this->config);
+//        }
         if (!$schema = $this->config['schema']??false) {
             // ugh!
             $schema = self::createConfigFromMap($this->config['map'], $columns)['schema'];
+//            dd($schema);
         }
 
         if (count($schema) <> count($columns)) {
@@ -303,7 +307,13 @@ class Parser
         if (count($schema) !== count($columns)) {
 //            dd($schema, $columns, array_diff(array_keys($schema), array_keys($columns)));
         }
-        assert(count($schema) == count($columns), sprintf("mismatch %d %d", count($schema), count($columns)));
+//        if (count($schema) != count($columns)) {
+//            dd(schema: $schema, columns: $columns,
+//                xdiff: array_diff(array_keys($columns), array_keys($schema)),
+//                diff: array_diff(array_keys($schema), array_keys($columns)));
+//        }
+        assert(count($schema) == count($columns), sprintf("mismatch %d %d",
+            count($schema), count($columns)));
 
         $zipper = collect($columns)->zip($schema);
         $valueRules = $this->config['valueRules']??[];
