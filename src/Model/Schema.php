@@ -14,6 +14,11 @@ class Schema
     {
     }
 
+    static public function createFromDottedConfig(string $dottedConfig)
+    {
+
+    }
+
     /**
      * @return string
      */
