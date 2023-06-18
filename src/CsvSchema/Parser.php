@@ -7,6 +7,7 @@ use League\Csv\Reader;
 use Survos\GridGroupBundle\CsvSchema\Exceptions\CastException;
 use Survos\GridGroupBundle\CsvSchema\Exceptions\UnsupportedTypeException;
 use Survos\GridGroupBundle\Model\Property;
+use Survos\GridGroupBundle\Model\Schema;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
@@ -63,12 +64,9 @@ class Parser
 
     /**
      * Parser constructor.
-     *
-     * @param array $config
      */
-    public function __construct(array $config)
+    public function __construct(private Schema $schema)
     {
-        $this->config = $config;
     }
 
     /**
@@ -114,52 +112,55 @@ class Parser
         return $this->parse(Reader::createFromPath($filename));
     }
 
-    static public function createConfigFromMap(array $map, $headers): array    {
-        $csvSchema = [];
-        $outputSchema = [];
-        $fieldNameDelimiter = ':'; // e.g. age:int
-
-        // create the map from the headers
-        foreach ($headers as $column) {
+    static public function createConfigFromMap(array $map=[], $headers=[]): Schema    {
+        $schema = new Schema();
+        // create the map from the headers\
+        foreach ($headers as $idx => $header) {
+            $property = Parser::parseConfigHeader($header, u($header)->snake()->toString());
+//            dd($property, $column);
             // if the last character is a symbol, process it
-            if (str_contains($column, ':')) {
-                [$newColumn, $rule] = explode(':', $column);
-                $map["/^$newColumn$/"] = $rule;
-            } else {
-                $newColumn = u($column)->snake()->toString(); // default
-            }
-
-            $lastChar = substr($newColumn, -1);
-            if (in_array($lastChar, ['|', '$', ',', '/'])) {
-                $newColumn = rtrim($column, $lastChar);
-                $map["/^$newColumn$/"] = "array($lastChar)";
-
-            }
-            $columns[] = $newColumn;
+//            if (str_contains($column, ':')) {
+//                [$newColumn, $rule] = explode(':', $column);
+//                $map["/^$newColumn$/"] = $rule;
+//            } else {
+//                $newColumn = ; // default
+//            }
+//
+//            $lastChar = substr($newColumn, -1);
+//            if (in_array($lastChar, ['|', '$', ',', '/'])) {
+//                $newColumn = rtrim($column, $lastChar);
+//                $map["/^$newColumn$/"] = "array($lastChar)";
+//
+//            }
+            $columns[] = $property;
         }
 
         // the default;
-        foreach ($columns as $column) {
-            $property = self::parseConfigHeader('att.string', $column);
+        foreach ($columns as $property) {
+            $header = $property->getCode();
+            assert($property->getType() <> $header, $header);
+            if (!$property->getType()) {
+                $property = self::parseConfigHeader('att.string', $property->getCode());
+            }
+//            $property = self::parseConfigHeader('att.string', $column);
+            // a map can overwrite a property, usually because the column headers are simply names.  We could combine this above.
             foreach ($map as $regEx => $rule) {
-                if (preg_match($regEx, $column)) {
+                $columnCode = $property->getCode();
+                if (preg_match($regEx, $columnCode)) {
                     if (is_null($rule)) {
                         // ignore?
                     }
-                    $property = self::parseConfigHeader($rule, $column);
+                    $property = self::parseConfigHeader($rule, $columnCode);
                     break;
                     $outputHeader = (string)$property;
                     // @todo: multiple rules based on pattern, like scurity?
                     $outputSchema[$property->getCode()] = $property->__toString();
                 }
             }
-            $csvSchema[$property->getCode()] = $property->__toString();
+            $schema->addProperty($property);
         }
 //        assert(count($csvSchema) == count($columns));
-        return [
-            'schema' => $csvSchema,
-            'outputSchema' => $outputSchema
-        ];
+        return $schema;
 
         return $outputSchema;
         if (0)
@@ -306,34 +307,27 @@ class Parser
      */
     public function parseRow(array $columns)
     {
-        if (empty($this->config)) {
+        assert(!empty($this->schema));
+        if (empty($this->schema)) {
+            $this->schema = self::createConfigFromMap(headers: $columns);
+        }
+        $schema = $this->schema;
 
-        }
-//        if ($this->config['schema']??false) {
-//            dd(existing_schema_in_config: $this->config);
-//        }
-        if (!$schema = $this->config['schema']??false) {
-            // ugh!
-            $schema = self::createConfigFromMap($this->config['map'], $columns)['schema'];
-        }
-//        dd($schema, $columns);
-
-        if (count($schema) <> count($columns)) {
-//            dd('columns mismatch', $schema, $columns);
-        }
-        if (count($schema) !== count($columns)) {
+        if ($schema->getPropertyCount() !== count($columns)) {
 //            dd($schema, $columns, array_diff(array_keys($schema), array_keys($columns)));
         }
-        if (count($schema) != count($columns)) {
+        if ($schema->getPropertyCount() !== count($columns)) {
             dd(schema: $schema, columns: $columns,
-                xdiff: array_diff(array_keys($columns), array_keys($schema)),
-                diff: array_diff(array_keys($schema), array_keys($columns)));
+                xdiff: array_diff(array_keys($columns), array_keys($schema->getProperties())),
+                diff: array_diff(array_keys($schema->getProperties()), array_keys($columns)));
         }
-        assert(count($schema) == count($columns), sprintf("mismatch %d %d",
-            count($schema), count($columns)));
+//        assert(count($schema) == count($columns), sprintf("mismatch %d %d",
+//            count($schema), count($columns)));
 
-        $zipper = collect($columns)->zip($schema);
+        $zipper = collect($columns)->zip($schema->getPropertyCodes());
         $valueRules = $this->config['valueRules']??[];
+
+//        dd($zipper, $valueRules, $schema);
         $flat = $zipper->flatMap(function ($pair, $index) use ($valueRules, $schema) {
             list($value, $type) = $pair;
             foreach ($valueRules as $valueRule => $newValue) {
@@ -342,7 +336,7 @@ class Parser
                 }
             }
 
-            $key = array_keys($schema)[$index];
+            $key = $schema->getPropertyCodes()[$index];
             $parsed = $this->getValue($type, $value, $key);
             return [$key => $parsed];
         });
@@ -414,7 +408,7 @@ class Parser
             $config .= '?';
         }
         [$dottedConfig, $settingsString] = explode('?', $config);
-        if (!str_contains($dottedConfig, ':')) {
+        if (!str_contains($dottedConfig, ':') && $originalCode) {
             $dottedConfig = $originalCode . ':' . $dottedConfig;
         }
         [$header, $dottedConfig] = self::parseDottedConfig($dottedConfig);
@@ -424,7 +418,8 @@ class Parser
             [$type, $values] = explode('.', $dottedConfig, 2);
             $parameters = $values; // what's after the .
         } else {
-            $type = $dottedConfig; // no params, native type, like string, which is really att.string
+            $type = null;
+//            $type = $dottedConfig; // no params, native type, like string, which is really att.string
             $parameters = null;
             if (in_array($type, Property::ATTRIBUTE_TYPES )) {
                 $parameters = $type;
@@ -432,7 +427,7 @@ class Parser
             }
         }
         // handle array shortcut
-        $lastChar = substr($header, -1);
+        $lastChar = substr($dottedConfig, -1);
         if (in_array($lastChar, ['|', '$', ',', '/'])) {
 //            $parameters = null;
             $type = "array$lastChar";
@@ -471,7 +466,8 @@ class Parser
 //        if (count($settings)) {
 //            dd($settings);
 //        }
-            $property = self::parseConfigHeader($config);
+        $property = $this->schema->getProperty($config);
+//            $property = self::parseConfigHeader($config);
 //        [$header, $dottedConfig, $settings] =
 //        $values = explode('.', $dottedConfig);
 //        $type = array_shift($values);
@@ -484,17 +480,28 @@ class Parser
 //        list($type, $parameters) = $this->parseType($type);
 //        dd($type, $values, $parameters);
 
-        $methodName = $this->getMethodName($type);
+        if ($type == 'att') {
+            $methodName = $this->getMethodName($property->getSubType());
+        } else {
+            $methodName = $this->getMethodName($type);
+        }
+        if ($type == 'cat') {
+//            dd(static::$customTypes, $methodName, $type, $property);
+        }
         if (method_exists($this, $methodName)) {
-            $method = [$this, $this->getMethodName($type)];
+            $method = [$this, $methodName];
         } elseif ($this->hasCustomType($type)) {
             $method = static::$customTypes[$type];
+//            dd('custom type: ' . $type, $method);
         } else {
+            assert(false, $property->__toString() . ' ' . $config);
             throw new UnsupportedTypeException($type);
         }
+//        dd($config,$value, $key, $type);
+//        dd($methodName, $type, $value, $property);
+        return call_user_func_array($method, [$value, $property]);
         try {
 //            dump($method, $value, $parameters, $settings);
-            return call_user_func_array($method, [$value, $property->getSubType(), $property->getSettings()]);
         } catch (\Exception $exception) {
             assert(false, $exception->getMessage());
 //            dd($method, $value, $parameters, $settings);
@@ -529,6 +536,11 @@ class Parser
         return 'parse'.ucfirst($type);
     }
 
+    public function parseAtt($value, Property $property) {
+        // sigh...
+        $method = 'parse' . $property->getSubType();
+        dd($value, $property);
+    }
     /**
      * @param string $value
      *
@@ -582,8 +594,9 @@ class Parser
      *
      * @return array
      */
-    protected function parseArray($string, string $delimiter=","): array
+    protected function parseArray($string, Property $property): array
     {
+        dd($string, $property);
         return strlen($string) ? explode($delimiter, trim($string)) : [];
     }
 

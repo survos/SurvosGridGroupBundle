@@ -17,12 +17,12 @@ class ParserTest extends TestCase
      */
     public function testParser(array $test)
     {
-        $key = $test['name'];
+        $key = $test['name'] ?? json_encode($test);
             $csvString = $test['source'];
             $csvReader = Reader::createFromString($csvString)->setHeaderOffset(0);
-            $config = Parser::createConfigFromMap($test['map'] ?? [], $csvReader->getHeader());
-            $config['valueRules'] = $test['valueRules'] ?? [];
-            $parser = new Parser($config);
+            $schema = Parser::createConfigFromMap($test['map'] ?? [], $csvReader->getHeader());
+            $schema->setValueRules($test['valueRules'] ?? []);
+            $parser = new Parser($schema);
 
             $expectsJson = $test['expects'] ?? null;
 
@@ -34,7 +34,7 @@ class ParserTest extends TestCase
             }
 
             if ($expectedSchema = $test['schema']??false) {
-                dd($config, $expectedSchema);
+//                dd($config, $expectedSchema);
                 assert(is_array($expectedSchema), "$key: invalid json string: " . json_encode($expectedSchema));
 
 //                $expects = json_decode($expectedSchema, true);
@@ -59,12 +59,20 @@ class ParserTest extends TestCase
     /**
      * @dataProvider parserTests
      */
-    public function testDottedConfig(string $dottedConfig, Property $property)
+    public function testDottedConfig(string $dottedConfig, Property $property, string $alias = null)
     {
 
+        $actual = Parser::parseConfigHeader($dottedConfig);
+        if ($property <> $actual) {
+            // maybe it's the long form, check the shortened version
+            $compactForm = $property->__toString();
+            assertEquals($compactForm, $actual->__toString());
+        } else {
+
+        }
         $this->assertEquals(
             $property,
-            $actual = Parser::parseConfigHeader($dottedConfig),
+            $actual,
             'act:' . $actual->__toString() . "\n" . 'exp:' . $property
         );
 
@@ -88,6 +96,7 @@ class ParserTest extends TestCase
     {
         return [
             ['genre|', new Property(code: 'genre', type: Property::PROPERTY_ARRAY, settings: ['delim' => '|'])],
+            ['languages:array?delim=|', new Property(code: 'languages', type: Property::PROPERTY_ARRAY, settings: ['delim' => '|'])],
             ['actors,',new Property(code: 'actors', type: Property::PROPERTY_ARRAY, settings: ['delim' => ','])],
             ['label:db.label',new Property(code: 'label', type: Property::TYPE_DATABASE, subType: 'label')],
             ['header', new Property('header')],

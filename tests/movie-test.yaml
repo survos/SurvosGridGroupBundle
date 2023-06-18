@@ -1,6 +1,25 @@
 given:
 
 cache:
+#  - db: parser.csv
+#    headers: ['id:db.code','name']
+#    steps:
+#      - operation: set
+#        msg: schema in header
+#        data: { id: 'romeo', name: 'Romeo' }
+#        # csv is what the file should be, expects is the result of the operation
+#        csv: |
+#          id:db.code,label
+#          romeo,Romeo
+#
+#      - operation: has
+#        key: romeo
+#        expects: true
+#      - operation: get
+#        key: romeo
+#        expects: Romeo
+
+
   - db: dynamic-columns.csv
     steps:
       - operation: set
@@ -69,6 +88,7 @@ cache:
     ignore_flush_db_after: true
     steps:
       - operation: set
+        msg: Write a file for reading later
         data: { id: 'nj', label: 'New Jersey', population: '' }
         csv: |
           id,label,population
@@ -78,6 +98,7 @@ cache:
     ignore_clear_db: true
     steps:
       - operation: headers
+        msg: reading existing file for headers
         expects: ["id", "label", "population"]
         csv: |
           id,label,population

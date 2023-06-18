@@ -15,13 +15,16 @@ class CsvDatabaseTest extends TestCase
     public function testCsvDatabase(array $test): void
     {
         $purgeFirst = !isset($test['ignore_clear_db']);
+        $headers = $test['headers'] ?? []; // really the schema
         $csvDatabase = new CsvDatabase($test['db'], $test['key'] ?? null,
-            $test['headers'] ?? [],
+            $headers,
             purge: $purgeFirst
         );
         if ($purgeFirst) {
             assert(!file_exists($csvDatabase->getFilename()));
-            assert(empty($csvDatabase->getHeaders()));
+            if (!count($headers)) {
+                assert(empty($csvDatabase->getHeaders()));
+            }
         }
 
         foreach ($test['steps'] as $stepIndex => $step) {

@@ -2,6 +2,8 @@
 
 // this is really the CsvTable, the database is more like the GridGroup
 
+// likely due for a refactoring, especially when PHP support sqlite 3.38+, which has JSON support
+
 namespace Survos\GridGroupBundle\Service;
 
 use Exception;
@@ -10,6 +12,8 @@ use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
 use SplFileObject;
 use SplTempFileObject;
+use Survos\GridGroupBundle\CsvSchema\Parser;
+use Survos\GridGroupBundle\Model\Property;
 use Survos\GridGroupBundle\Service\CountableArrayCache;
 use Survos\GridGroupBundle\Service\Reader;
 use Symfony\Component\String\Slugger\AsciiSlugger;
@@ -79,16 +83,40 @@ class CsvDatabase implements LoggerAwareInterface
         private bool $purge = false,
         private bool    $useGZip = false,
         private ?Reader $reader = null,
+        private array   $schema = [], // an ordered list of properties, derived from headers
     )
     {
         $this->offsetCache = new CountableArrayCache();
         $this->aliases = new CountableArrayCache();
+        if ($this->headers) {
+            $this->setSchema($this->headers);
+//            assert(false, "are we using headers anywhere?  can we use schema config?");
+//            dd($headers, $this->schema);
+        }
         if ($this->purge) {
             $this->reset();
         } else {
             $this->refresh();
         }
+        // if headers were passed in, it's the schema.
+//        $this->headers=[];
+//        foreach ($this->schema as $code=>$property) {
+//            $this->headers[] = $code;
+//        }
+    }
 
+    public function setSchema(array $headers): array
+    {
+        $this->schema = [];
+        foreach ($headers as $dottedConfig) {
+            $property = Parser::parseConfigHeader($dottedConfig);
+            $this->schema[$property->getCode()] = $property;
+            // hackish, we should leverage the Schema class
+            if ($property->getSubType()=='code') {
+                $this->setKeyName($property->getCode());
+            }
+        }
+        return $this->schema;
     }
 
     // for debugging
@@ -261,7 +289,11 @@ class CsvDatabase implements LoggerAwareInterface
         }
 
         if (($pos == 0)) {
+            // rewriting the database needs this too!
+            $schemaHeaders = array_map(fn(Property $property) => $property->__toString(), array_values($this->schema));
+//            dd($headers, $schemaHeaders, $this->schema);
             $file->fputcsv($headers);
+//            $file->fputcsv($schemaHeaders);
         }
 
         // if no headers, then use the headers of the first row passed in.
@@ -352,6 +384,7 @@ class CsvDatabase implements LoggerAwareInterface
 
                     if ($idx == 0) {
                         $newHeaders = array_merge($row, $diff);
+//                        dd($newHeaders);
                         $writer->insertOne($newHeaders);
                     } else {
                         $row = array_pad($row, count($newHeaders), json_encode($diff));
@@ -378,13 +411,14 @@ class CsvDatabase implements LoggerAwareInterface
         }
     }
 
-    private function getReader(): Reader
+    public function getReader(): Reader
     {
-        static $reader = null;
-        if (!$reader) {
-            $reader = new Reader($this->getPath());
+        static $readers = [];
+        $path = $this->getPath();
+        if (!array_key_exists($path, $readers)) {
+            $readers[$path] = new Reader($this->getPath());
         }
-        return $reader;
+        return $readers[$path];
 
     }
 
@@ -589,12 +623,18 @@ class CsvDatabase implements LoggerAwareInterface
             $this->reader->setCurrentBufferPosition($position);
             $row = $this->reader->getCsvRow();
             $headers = $this->getHeaders();
+
+//            if (empty($this->schema) && empty($headers)) {
+//                $this->setSchema(array_keys($data));
+//            }
+//            $headers = array_keys($this->schema);
             assert(count($headers) == count($row),
                 json_encode($row) .
                 sprintf("\nmismatch at %d %d headers %d columns\n%s",
                     $position,
                     count($headers), count($row), $this->getFilename()));
-            return array_combine($this->headers, $row);
+            // @todo: pass through parser to get correct types
+            return array_combine($headers, $row);
             // @todo: move the buffer pointer using fseek and get the record there.
         }
         return null;

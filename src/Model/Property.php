@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Survos\GridGroupBundle\Model;
 
+use App\Entity\Field\Field;
+use App\Entity\Instance;
+
 class Property implements \Stringable
 {
 
@@ -102,6 +105,12 @@ class Property implements \Stringable
         return $this->code == $this->schema->getIdName();
     }
 
+    // this should probably be at the field, not property, level, but this way we can translate before having fields.
+    public function isTranslatable(): bool
+    {
+        return $this->getType() == Field::TYPE_INTRINSIC && in_array($this->getSubType(), Instance::TRANSLATABLE_FIELDS);
+    }
+
     /**
      * @return string|null
      */
@@ -142,19 +151,28 @@ class Property implements \Stringable
     public function __toString(): string
     {
         $x = $this->getCode();
+        $settings = $this->getSettings();
         if ($type = $this->getType()) {
-            $x .= ':' . $type;
+            // if array, use the short form.
+            if ($type === self::PROPERTY_ARRAY) {
+                $x .= $settings['delim'];
+                unset($settings['delim']);
+            } else {
+                // hack -- they type is wrong!
+                if ($x <> $type) {
+                    assert($x <> $type);
+                    $x .= ':' . $type;
+                }
+            }
         }
-        // if the only setting is a delimiter, add it.
         if ($subType = $this->getSubType()) {
             $x .= '.'.$subType;
         }
-        if ( ($settings = $this->getSettings()) && !empty($settings)) {
+        if ( $settings && !empty($settings)) {
             $x .= '?' . http_build_query($settings);
         }
         return $x;
 
-        // TODO: Implement __toString() method.
     }
 }
 
