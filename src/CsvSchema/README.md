@@ -1,3 +1,19 @@
+# GridDatabase
+
+$grid = new GridDatabase($filename);
+$table = $grid->getTable('imdb', [
+    'id:int.auto',
+    'code:db.code?slugger=initials(name)',
+    'name:string'
+]);
+$table->getSchema()->getSql(); // CREATE TABLE...
+$table->addRow([
+    'name' => 'Fred'
+]);
+$subtitlesTable = $grid->getTable('subtitles');
+
+
+
 # CSV Schema Parser
 
 The Survos Csv Schema Parser is based heavily on https://github.com/ksassnowski/csv-schema
