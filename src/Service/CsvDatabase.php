@@ -19,7 +19,7 @@ use Survos\GridGroupBundle\Service\Reader;
 use Symfony\Component\String\Slugger\AsciiSlugger;
 use League\Csv\Reader as LeagueCsvReader;
 
-class CsvDatabase implements LoggerAwareInterface
+class CsvDatabase implements LoggerAwareInterface, \Stringable
 {
     use LoggerAwareTrait;
 
@@ -615,8 +615,12 @@ class CsvDatabase implements LoggerAwareInterface
      *
      * @return mixed
      */
-    public function get(string $key): mixed
+    public function get(string|array $key): mixed
     {
+        if (is_array($key)) {
+            assert(array_key_exists($this->getKeyName(), $key), "if passing an array to get, the key must exist: " . $this->getKeyName());
+            $key = $key[$this->getKeyName()];
+        }
         // Fetch the offset
         if ($position = $this->keyOffset($key)) {
 //            assert($this->reader, $this->getFilename());
@@ -794,5 +798,11 @@ class CsvDatabase implements LoggerAwareInterface
 
         return new self($tempFileName, $this->keyName, $this->headers, $this->useGZip);
     }
+
+    public function __toString()
+    {
+        return $this->getFilename();
+    }
+
 
 }
