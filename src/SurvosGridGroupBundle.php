@@ -53,9 +53,8 @@ class SurvosGridGroupBundle extends AbstractBundle
     {
         $definition->rootNode()
             ->children()
-            ->scalarNode('direction')->defaultValue('LR')->end()
+            ->scalarNode('dir')->defaultValue('grids')->end()
             ->scalarNode('base_layout')->defaultValue('base.html.twig')->end()
-            ->arrayNode('entities')
             ->scalarPrototype()
             ->end()->end()
             ->booleanNode('enabled')->defaultTrue()->end()
