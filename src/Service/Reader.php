@@ -126,10 +126,12 @@ class Reader //  extends \EasyCSV\Reader
      */
     public function getRow(): \Generator
     {
+        static $currentRow = 0;
         $this->init();
         $this->currentLine++;
         while ($row = $this->getCsvRow()) {
             $this->setRawRow($row);
+            $currentRow++;
             if (!$this->strict) {
                 $headersCount = $this->headerCount;
                 $fieldCount = count($row); // how many fields
@@ -139,7 +141,7 @@ class Reader //  extends \EasyCSV\Reader
                     $row = array_pad($row, $headersCount, null);
                 }
             } else {
-                assert(count($row) == $this->headerCount, $this->path . "\n\n" . join("\n", $this->headers) . "\n\n" . join("\n", $row));
+                assert(count($row) == $this->headerCount, "Header / data count mismatch on line $currentRow in "  . $this->path . "\n\n" . join("\n", $this->headers) . "\n\n" . join("\n", $row));
             }
 
             $data = array_combine($this->headers, $row);
