@@ -137,6 +137,11 @@ class Property implements \Stringable
         return $this->settings;
     }
 
+    public function getDelim(): ?string
+    {
+        return $this->getSettings()['delim']??null;
+    }
+
     /**
      * @param array|null $settings
      * @return Property

@@ -426,16 +426,24 @@ class Parser
                 $type = Property::TYPE_ATTRIBUTE;
             }
         }
+        $subType = $parameters;
+
         // handle array shortcut
         $lastChar = substr($dottedConfig, -1);
         if (in_array($lastChar, ['|', '$', ',', '/'])) {
 //            $parameters = null;
-            $type = "array$lastChar";
+//            dump(dottedConfig: $dottedConfig, config: $config, type: $type);
+//            $type = "array$lastChar";
             $header = rtrim($header, $lastChar);
+            $subType = rtrim($subType, $lastChar); // hack!
+//            $subType = $type; // for rel.mat, the subtype is 'mat'
+//            dd(type: $type);
+            $settings['delim'] = $lastChar;
 //            $map["/^$newColumn$/"] = "array($lastChar)";
 
         }
         if ($type) {
+            // long form?
             if (preg_match('/(array)(.)/', $type, $m)) {
                 $settings['delim'] = $m[2];
 //                $parameters = $m[2];
@@ -446,7 +454,10 @@ class Parser
 //            $header = $parameters; // db types must be our internal codes
         }
 
-        $property = new Property($header, $type, $parameters, $settings);
+        $property = new Property($header, $type, $subType, $settings);
+        if ($property->getDelim()) {
+//            dd($property, $type, $parameters, subType: $subType, settings: $settings);
+        }
         return $property;
 
     }
@@ -596,8 +607,8 @@ class Parser
      */
     protected function parseArray($string, Property $property): array
     {
-        dd($string, $property);
-        return strlen($string) ? explode($delimiter, trim($string)) : [];
+        dd(property: $property);
+        return strlen($string) ? explode($property->getDelim(), trim($string)) : [];
     }
 
     protected function parseDb($string, string $delimiter=","): string
