@@ -179,6 +179,7 @@ class CsvDatabase implements LoggerAwareInterface, \Stringable
         return $this;
     }
 
+
     /**
      * @return string|null
      */
@@ -276,9 +277,9 @@ class CsvDatabase implements LoggerAwareInterface, \Stringable
         $pos = $file->ftell();
         $emptyFile = $pos == 0;
         $keyName = $this->getKeyName();
-
+        assert(array_key_exists($keyName, $data), "data must contain key " . $keyName . "\n" . join("\n", array_keys($data)));
+        assert(!empty($data[$keyName]), "key $keyName cannot be empty" . $data[$keyName]);
         if (empty($data[$keyName])) {
-            assert(false, "data must contain key " . $keyName);
             $data = [$keyName => $key] + $data;
         }
 
@@ -327,6 +328,15 @@ class CsvDatabase implements LoggerAwareInterface, \Stringable
     {
         return $this->currentSize;
     }
+
+//    public function getSizeFromDisk(): ?int
+//    {
+//        $filename = $this->getPath();
+//        if (file_exists($filename)) {
+//            $this->clo
+//        }
+//
+//    }
 
     /**
      * Read lines from the database file.
