@@ -146,15 +146,20 @@ class Parser
             // a map can overwrite a property, usually because the column headers are simply names.  We could combine this above.
             foreach ($map as $regEx => $rule) {
                 $columnCode = $property->getCode();
-                if (preg_match($regEx, $columnCode)) {
-                    if (is_null($rule)) {
-                        // ignore?
+                try {
+                    if (preg_match($regEx, $columnCode)) {
+                        if (is_null($rule)) {
+                            // ignore?
+                        }
+                        $property = self::parseConfigHeader($rule, $columnCode);
+                        break;
+                        $outputHeader = (string)$property;
+                        // @todo: multiple rules based on pattern, like scurity?
+                        $outputSchema[$property->getCode()] = $property->__toString();
                     }
-                    $property = self::parseConfigHeader($rule, $columnCode);
-                    break;
-                    $outputHeader = (string)$property;
-                    // @todo: multiple rules based on pattern, like scurity?
-                    $outputSchema[$property->getCode()] = $property->__toString();
+                } catch (\Exception $exception) {
+                    assert(false, sprintf("Error matching %s to %s", $regEx, $columnCode));
+                    continue;
                 }
             }
             $schema->addProperty($property);
