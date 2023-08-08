@@ -313,7 +313,7 @@ class CsvDatabase implements LoggerAwareInterface, \Stringable
 
         assert(array_key_exists($this->getKeyName(), $data), json_encode($data));
         $this->offsetCache->set($key, $position);
-
+        $dataValues = $this->stringifyData($dataValues, $headers);
         $file->fputcsv($dataValues);
         $this->currentSize = $file->ftell();
         $this->closeFile($file);
@@ -322,6 +322,23 @@ class CsvDatabase implements LoggerAwareInterface, \Stringable
             $this->refresh();
         }
 
+    }
+
+    public function stringifyData(array $dataValues, array $headers=null): array
+    {
+        foreach ($dataValues as $idx => $value) {
+            if (is_array($value)) {
+                if (array_is_list($value)) {
+                    $delim = $headers ? $headers[$idx][-1] : '|';
+                    $value = join($delim, $value);
+                } else {
+                    // json_encode?
+                    assert(false, json_encode($value));
+                }
+                $dataValues[$idx] = $value;
+            }
+        }
+        return $dataValues;
     }
 
     public function getSize(): int
@@ -768,6 +785,7 @@ class CsvDatabase implements LoggerAwareInterface, \Stringable
         foreach ($file as $row) {
             if ($row[$this->getKeyName()] == $key) {
                 if ($data !== false) {
+                    $data = $this->stringifyData($data);
                     $tmpFile->fputcsv($data);
                 }
             } else {

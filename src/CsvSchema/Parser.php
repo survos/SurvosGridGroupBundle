@@ -138,12 +138,16 @@ class Parser
         // the default;
         foreach ($columns as $property) {
             $header = $property->getCode();
+            if ($header == 'medidas') {
+//                dump($header);
+            }
             assert($property->getType() <> $header, $header);
             if (!$property->getType()) {
                 $property = self::parseConfigHeader('att.string', $property->getCode());
             }
 //            $property = self::parseConfigHeader('att.string', $column);
             // a map can overwrite a property, usually because the column headers are simply names.  We could combine this above.
+            $mapPosition = 0;
             foreach ($map as $regEx => $rule) {
                 $columnCode = $property->getCode();
                 try {
@@ -152,6 +156,8 @@ class Parser
                             // ignore?
                         }
                         $property = self::parseConfigHeader($rule, $columnCode);
+                        $property->set(Property::SETTING_MAP_POSITION, $mapPosition);
+//                        dd($property, $mapPosition, $regEx, $columnCode);
                         break;
                         $outputHeader = (string)$property;
                         // @todo: multiple rules based on pattern, like scurity?
@@ -162,6 +168,7 @@ class Parser
                     continue;
                 }
             }
+            $mapPosition++;
             $schema->addProperty($property);
         }
 //        assert(count($csvSchema) == count($columns));
@@ -322,7 +329,7 @@ class Parser
 //            dd($schema, $columns, array_diff(array_keys($schema), array_keys($columns)));
         }
         if ($schema->getPropertyCount() !== count($columns)) {
-            dd(schema: $schema, columns: $columns,
+            dd(message: sprintf("Schema has %d, columns has %d", $schema->getPropertyCount(), count($columns)), schema: $schema, columns: $columns,
                 xdiff: array_diff(array_keys($columns), array_keys($schema->getProperties())),
                 diff: array_diff(array_keys($schema->getProperties()), array_keys($columns)));
         }

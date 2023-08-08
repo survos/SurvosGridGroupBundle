@@ -29,6 +29,10 @@ class Property implements \Stringable
 
     final public const ATTRIBUTE_TYPES = [self::PROPERTY_INT, self::PROPERTY_TEXT, self::PROPERTY_STRING];
 
+    final public const SETTING_MAP_POSITION = 'map_position';
+    final public const SETTING_MAX = 'max';
+    final public const SETTING_MIN = 'min';
+
 
 
 
@@ -150,6 +154,17 @@ class Property implements \Stringable
     {
         $this->settings = $settings;
         return $this;
+    }
+
+    public function set(string $var, mixed $val): self
+    {
+        $this->settings[$var] = $val;
+        return $this;
+    }
+
+    public function get($var, $default=null): mixed
+    {
+        return $this->settings[$var]??$default;
     }
 
 
