@@ -135,7 +135,7 @@ class Parser
             $columns[] = $property;
         }
 
-        // the default;
+        // the default, ordered by the headers
         foreach ($columns as $property) {
             $header = $property->getCode();
             if ($header == 'medidas') {
@@ -156,7 +156,9 @@ class Parser
                             // ignore?
                         }
                         $property = self::parseConfigHeader($rule, $columnCode);
-                        $property->set(Property::SETTING_MAP_POSITION, $mapPosition);
+                        $property->setOrderIdx($mapPosition);
+//                        dd($mapPosition, $property);
+//                        $property->set(Property::SETTING_MAP_POSITION, $mapPosition);
 //                        dd($property, $mapPosition, $regEx, $columnCode);
                         break;
                         $outputHeader = (string)$property;
@@ -167,8 +169,8 @@ class Parser
                     assert(false, sprintf("Error matching %s to %s", $regEx, $columnCode));
                     continue;
                 }
+                $mapPosition++;
             }
-            $mapPosition++;
             $schema->addProperty($property);
         }
 //        assert(count($csvSchema) == count($columns));
@@ -349,6 +351,8 @@ class Parser
             }
 
             $key = $schema->getPropertyCodes()[$index];
+            if ($type == 'cat') dd($key, $type, $value);
+
             $parsed = $this->getValue($type, $value, $key);
             return [$key => $parsed];
         });
@@ -522,6 +526,7 @@ class Parser
         }
 //        dd($config,$value, $key, $type);
 //        dd($methodName, $type, $value, $property);
+//        dump($method, $value, $property);
         return call_user_func_array($method, [$value, $property]);
         try {
 //            dump($method, $value, $parameters, $settings);

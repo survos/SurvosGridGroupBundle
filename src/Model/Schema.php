@@ -51,22 +51,53 @@ class Schema
         return $this;
     }
 
+
     /**
-     * @return array
+     * @return array<string, Property>
      */
-    public function getProperties(): array
+    public function getKeyedProperties(): array
     {
         return $this->properties;
     }
 
+    /**
+     * @return Property[]
+     */
+    public function getSortedProperties(): array
+    {
+        // push the null columns to the end
+        $sorted = [];
+        foreach ($this->getKeyedProperties() as $property) {
+            if (is_null($property->getOrderIdx())) {
+                $property->setOrderIdx(9999);
+            }
+            $sorted[] = $property;
+        }
+        usort($sorted, fn(Property $x, Property $y) => $x->getOrderIdx() <=> $y->getOrderIdx());
+        assert(array_is_list($sorted));
+        return $sorted;
+    }
+
     public function getPropertyCodes(): array
     {
-        return array_keys($this->getProperties());
+//        return $this->getSortedPropertyCodes();
+        return array_keys($this->getKeyedProperties());
     }
 
     public function getPropertyCount(): int
     {
-        return count($this->getProperties());
+        return count($this->properties);
+    }
+    public function getSortedPropertyCodes(): array
+    {
+        $sortedProperties = [];
+//        dd($this->getKeyedProperties(), $this->getSortedProperties());
+        foreach ($this->getSortedProperties() as $property) {
+            $sortedProperties[] = $property->getCode();
+        }
+        return $sortedProperties;
+//        dd($sorted, $sortedProperties);
+        return array_keys($this->getProperties());
     }
 
     /**

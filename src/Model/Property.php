@@ -33,7 +33,7 @@ class Property implements \Stringable
     final public const SETTING_MAX = 'max';
     final public const SETTING_MIN = 'min';
 
-
+    private ?int $orderIdx = null;
 
 
     public function __construct(
@@ -48,6 +48,17 @@ class Property implements \Stringable
         if ($this->schema) {
             $schema->addProperty($this);
         }
+    }
+
+    public function getOrderIdx(): ?int
+    {
+        return $this->orderIdx;
+    }
+
+    public function setOrderIdx(?int $orderIdx): self
+    {
+        $this->orderIdx = $orderIdx;
+        return $this;
     }
 
     /**
