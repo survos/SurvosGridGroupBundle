@@ -69,6 +69,11 @@ class Parser
     {
     }
 
+    public function getSchema(): Schema
+    {
+        return $this->schema;
+    }
+
     /**
      * Register a handler for a custom type. The handler will be called with
      * the value to parse.
@@ -332,8 +337,8 @@ class Parser
         }
         if ($schema->getPropertyCount() !== count($columns)) {
             dd(message: sprintf("Schema has %d, columns has %d", $schema->getPropertyCount(), count($columns)), schema: $schema, columns: $columns,
-                xdiff: array_diff(array_keys($columns), array_keys($schema->getProperties())),
-                diff: array_diff(array_keys($schema->getProperties()), array_keys($columns)));
+                xdiff: array_diff(array_keys($columns), $schema->getSortedPropertyCodes()),
+                diff: array_diff($schema->getSortedPropertyCodes(), array_keys($columns)));
         }
 //        assert(count($schema) == count($columns), sprintf("mismatch %d %d",
 //            count($schema), count($columns)));
