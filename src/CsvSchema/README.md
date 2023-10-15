@@ -78,6 +78,12 @@ And as if that wasn't amazing enough, it also casts your data to the correct dat
 composer require sassnowski/csv-schema
 ```
 
+## Worth a look
+
+* https://github.com/mql21/CsvImporter
+* https://csvkit.readthedocs.io/en/latest/
+
+
 ## Usage
 
 First we have to define the schema of the CSV file we're about to parse. The schema is an associative array where the keys

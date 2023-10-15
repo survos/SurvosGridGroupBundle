@@ -450,7 +450,8 @@ class Parser
         $subType = $parameters;
 
         // handle array shortcut
-        $lastChar = substr($dottedConfig, -1);
+
+        $lastChar = $dottedConfig ? substr($dottedConfig, -1) : null;
         if (in_array($lastChar, ['|', '$', ',', '/'])) {
 //            $parameters = null;
 //            dump(dottedConfig: $dottedConfig, config: $config, type: $type);

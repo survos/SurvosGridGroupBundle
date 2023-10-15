@@ -701,8 +701,9 @@ class CsvDatabase implements LoggerAwareInterface, \Stringable
      * @return CsvDatabase
      * @throws Exception
      */
-    public function set(array|object|null $data = null, string $key = null): self
+    public function set(string|array|object|null $data = null, array|string $key = null): self
     {
+        assert(!is_string($data), 'set($data, $key) now, arguments are probably reversed.');
         if (!$key) {
 //            $key = $this->getKeyName();
         }
@@ -742,8 +743,8 @@ class CsvDatabase implements LoggerAwareInterface, \Stringable
             throw new Exception("You need to set 'keyName' parameter or provide id field in data array!");
         }
 
-
-        assert(array_key_exists($this->getKeyName(), $data), sprintf("Missing key %s in %s", $this->getKeyName(), $this->getFilename()));
+        assert(array_key_exists($this->getKeyName(), $data), sprintf("Missing keyName %s in %s\n%s",
+            $this->getKeyName(), $this->getFilename(), join("\n", array_keys($data))));
         $keyValue = $data[$this->getKeyName()];
 
         if (!$this->hasHeaders()) {

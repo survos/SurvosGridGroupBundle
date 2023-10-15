@@ -77,9 +77,9 @@ class CsvCache
      * @param string $key
      * @param mixed $data
      */
-    public function set(string $key, $data)
+    public function set(string $key, array|object $data)
     {
-        return $this->getDatabase()->set($key, $data);
+        return $this->getDatabase()->set($data, $key);
     }
 
     public function get(string $key)
