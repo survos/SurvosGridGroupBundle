@@ -38,7 +38,7 @@
         "symfony/phpunit-bridge": "^6.3 || ^7.0",
         "symfony/twig-bundle": "^6.3 || ^7.0",
         "symfony/var-dumper": "^6.3 || ^7.0",
-        "phpunit/phpunit": "^9.5",
+        "phpunit/phpunit": "^9.5||^10.0||^11.0",
         "symfony/yaml": "^6.3 || ^7.0",
         "spaze/phpstan-disallowed-calls": "^2.14",
         "phpstan/phpstan-symfony": "^1.3",
