@@ -107,13 +107,14 @@ class Grid
 
         $fpSize = ftell($fp);
         rewind($fp);
-//        $data = fread($fp, $fpSize);
-        $data = rtrim(stream_get_contents($fp), "\n");
+        if ($data = stream_get_contents($fp)) {
+            $data = rtrim($data, "\n");
+        }
         fclose($fp);
         return $data;
     }
 
-    public function setHeaders(array $headers) {
+    public function setHeaders(array $headers): void {
         $this->headers = $headers;
     }
 

@@ -110,7 +110,7 @@ class Schema
         return $this;
     }
 
-    public function addProperty(Property $property) {
+    public function addProperty(Property $property): void {
         $this->properties[$property->getCode()] = $property;
     }
 

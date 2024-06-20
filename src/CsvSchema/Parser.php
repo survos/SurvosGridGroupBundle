@@ -81,7 +81,7 @@ class Parser
      * @param string   $type
      * @param callable $callback
      */
-    public static function registerType($type, callable $callback)
+    public static function registerType($type, callable $callback): void
     {
         static::$customTypes[$type] = $callback;
     }
@@ -456,8 +456,8 @@ class Parser
 //            $parameters = null;
 //            dump(dottedConfig: $dottedConfig, config: $config, type: $type);
 //            $type = "array$lastChar";
-            $header = rtrim($header, $lastChar);
-            $subType = rtrim($subType, $lastChar); // hack!
+            $header = $header ? rtrim($header, $lastChar) : null;
+            $subType = $subType ? rtrim($subType, $lastChar): null; // hack!
 //            $subType = $type; // for rel.mat, the subtype is 'mat'
 //            dd(type: $type);
             $settings['delim'] = $lastChar;
@@ -570,7 +570,7 @@ class Parser
         return 'parse'.ucfirst($type);
     }
 
-    public function parseAtt($value, Property $property) {
+    public function parseAtt($value, Property $property): void {
         // sigh...
         $method = 'parse' . $property->getSubType();
         dd($value, $property);

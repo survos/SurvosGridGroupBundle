@@ -9,7 +9,7 @@ $table = $grid->getTable('imdb', [
 $table->getSchema()->getSql(); // CREATE TABLE...
 $table->addRow([
     'name' => 'Fred'
-]);
+]); 
 $subtitlesTable = $grid->getTable('subtitles');
 
 

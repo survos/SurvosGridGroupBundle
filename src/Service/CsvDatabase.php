@@ -135,7 +135,7 @@ class CsvDatabase implements LoggerAwareInterface, \Stringable
         return $this;
     }
 
-    public function refresh()
+    public function refresh(): void
     {
         $this->offsetCache->flush();
         $this->aliases->flush();
@@ -449,7 +449,7 @@ class CsvDatabase implements LoggerAwareInterface, \Stringable
 
     }
 
-    public function loadOffsetCache()
+    public function loadOffsetCache(): void
     {
 
 //        assert(count($this->headers), "missing headers");
@@ -490,7 +490,7 @@ class CsvDatabase implements LoggerAwareInterface, \Stringable
      *
      * @throws Exception
      */
-    public function setName(string $name)
+    public function setName(string $name): void
     {
         $this->name = $name;
     }
@@ -611,7 +611,7 @@ class CsvDatabase implements LoggerAwareInterface, \Stringable
     /**
      * Flush the database file.
      */
-    public function flushFile()
+    public function flushFile(): void
     {
         $file = $this->openFile(static::FILE_WRITE);
         $this->closeFile($file);
@@ -623,7 +623,7 @@ class CsvDatabase implements LoggerAwareInterface, \Stringable
      * @param SplTempFileObject $tmpFile
      * @throws Exception
      */
-    public function writeTempToFile(SplTempFileObject &$tmpFile)
+    public function writeTempToFile(SplTempFileObject &$tmpFile): void
     {
         $file = $this->openFile(static::FILE_WRITE);
 

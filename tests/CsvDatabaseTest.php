@@ -2,6 +2,7 @@
 
 namespace Survos\GridGroupBundle\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Survos\GridGroupBundle\Service\CsvDatabase;
 use Survos\GridGroupBundle\Service\GridGroupService;
@@ -9,9 +10,7 @@ use Symfony\Component\Yaml\Yaml;
 
 class CsvDatabaseTest extends TestCase
 {
-    /**
-     * @dataProvider csvSteps
-     */
+    #[DataProvider('csvSteps')]
     public function testCsvDatabase(array $test): void
     {
         $purgeFirst = !isset($test['ignore_clear_db']);

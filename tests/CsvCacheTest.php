@@ -2,18 +2,21 @@
 
 namespace Survos\GridGroupBundle\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\TestDox;
 use Survos\GridGroupBundle\Service\CsvCache;
 use Survos\GridGroupBundle\Service\CsvDatabase;
 use Symfony\Component\Yaml\Yaml;
 
 class CsvCacheTest extends TestCase
 {
-    /**
-     * @dataProvider csvSteps
-     */
-    public function testCsvCache(array $test): void
+    #[DataProvider('csvSteps')]
+    #[TestDox('checking $cacheName')]
+    public function testCsvCache(string $cacheName, array $test): void
     {
+        $this->assertSame($test['db'], $cacheName);
+
         $csvDatabase = new CsvDatabase($test['db'], $test['key'], $test['headers'] ?? []);
         $csvDatabase->flushFile(); // purge?  reset? We need to start with a clean file.
         $csvDatabase->purge();
@@ -43,10 +46,8 @@ class CsvCacheTest extends TestCase
         }
     }
 
-    /**
-     * @dataProvider csvSteps
-     */
-    public function testBaseMethods($test)
+    #[DataProvider('csvSteps')]
+    public function testBaseMethods($test): void
     {
         $csvCache = new CsvCache($test['db'], $test['key'], []);
         $this->assertSame($test['db'], $csvCache->getCsvFilename());
@@ -63,8 +64,10 @@ class CsvCacheTest extends TestCase
     public static function csvSteps()
     {
         $data = Yaml::parseFile(__DIR__ . '/cache-test.yaml');
+
         foreach ($data['cache'] as $test) {
-            yield [$test['db'] => $test];
+            $cacheName = $test['db'];
+            yield ['cacheName' => $cacheName, 'test' => $test];
         }
     }
 }

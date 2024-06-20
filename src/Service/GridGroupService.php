@@ -39,12 +39,12 @@ class GridGroupService
     }
 
 
-    static public function assertKeyExists($key, array $array, string $message = '')
+    static public function assertKeyExists($key, array $array, string $message = ''): void
     {
         assert(array_key_exists($key, $array), self::missingKey($key, $array) . "\n$message");
     }
 
-    static public function assertInArray($key, array $array, string $message = '')
+    static public function assertInArray($key, array $array, string $message = ''): void
     {
         assert(in_array($key, $array), self::missingElement($key, $array) . "\n$message");
     }
@@ -276,7 +276,7 @@ if (($handle = fopen($filename, "r")) !== FALSE) {
 
     }
     /** @phpstan-ignore-next-line */
-    private function cleanup(Worksheet $sheet, array $fieldNames = [])
+    private function cleanup(Worksheet $sheet, array $fieldNames = []): void
     {
 
         // @todo: hide id rows

@@ -83,7 +83,7 @@ class GridDatabase implements LoggerAwareInterface
         return $this;
     }
 
-    public function refresh()
+    public function refresh(): void
     {
         $this->offsetCache->flush();
         $this->aliases->flush();
@@ -370,7 +370,7 @@ class GridDatabase implements LoggerAwareInterface
 
     }
 
-    public function loadOffsetCache()
+    public function loadOffsetCache(): void
     {
 
 //        assert(count($this->headers), "missing headers");
@@ -411,7 +411,7 @@ class GridDatabase implements LoggerAwareInterface
      *
      * @throws Exception
      */
-    public function setName(string $name)
+    public function setName(string $name): void
     {
         $this->name = $name;
     }
@@ -532,7 +532,7 @@ class GridDatabase implements LoggerAwareInterface
     /**
      * Flush the database file.
      */
-    public function flushFile()
+    public function flushFile(): void
     {
         $file = $this->openFile(static::FILE_WRITE);
         $this->closeFile($file);
@@ -544,7 +544,7 @@ class GridDatabase implements LoggerAwareInterface
      * @param SplTempFileObject $tmpFile
      * @throws Exception
      */
-    public function writeTempToFile(SplTempFileObject &$tmpFile)
+    public function writeTempToFile(SplTempFileObject &$tmpFile): void
     {
         $file = $this->openFile(static::FILE_WRITE);
 

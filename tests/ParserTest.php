@@ -9,13 +9,13 @@ use Survos\GridGroupBundle\Model\Property;
 use Symfony\Component\Yaml\Yaml;
 
 use function PHPUnit\Framework\assertEquals;
-
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\TestDox;
 class ParserTest extends TestCase
 {
-    /**
-     * @dataProvider csvTests
-     */
-    public function testParser(array $test)
+    #[DataProvider('csvTests')]
+    #[TestDox('read and parse data from csv files')]
+    public function testParser(array $test): void
     {
         $key = $test['name'] ?? json_encode($test);
             $csvString = $test['source'];
@@ -46,7 +46,7 @@ class ParserTest extends TestCase
 
     }
 
-    private function compareProperties(Property $expected, Property $actual)
+    private function compareProperties(Property $expected, Property $actual): void
     {
         $this->assertEquals(
             $expected,
@@ -56,10 +56,8 @@ class ParserTest extends TestCase
 
     }
 
-    /**
-     * @dataProvider parserTests
-     */
-    public function testDottedConfig(string $dottedConfig, Property $property, string $alias = null)
+    #[DataProvider('parserTests')]
+    public function testDottedConfig(string $dottedConfig, Property $property, string $alias = null): void
     {
 
         $actual = Parser::parseConfigHeader($dottedConfig);

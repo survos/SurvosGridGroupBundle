@@ -41,7 +41,7 @@ class CountableArrayCache
     /**
      * {@inheritdoc}
      */
-    public function set($key, $data)
+    public function set($key, $data): void
     {
         if ($key == 'inscription') {
             $key = $key;
@@ -53,7 +53,7 @@ class CountableArrayCache
     /**
      * {@inheritdoc}
      */
-    public function delete($key)
+    public function delete($key): void
     {
         unset($this->cache[$key]);
     }
@@ -61,7 +61,7 @@ class CountableArrayCache
     /**
      * {@inheritdoc}
      */
-    public function flush()
+    public function flush(): void
     {
         $this->cache = [];
     }

@@ -4,6 +4,7 @@ namespace Survos\GridGroupBundle\Tests;
 
 use Generator;
 use Hoa\File\Read;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Survos\GridGroupBundle\Service\GridGroupService;
 use Survos\GridGroupBundle\Service\Reader;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -11,10 +12,8 @@ use Symfony\Component\Yaml\Yaml;
 
 class GridGroupServiceTest extends KernelTestCase
 {
-    /**
-     * @dataProvider steps
-     */
-    public function testTrim(array $test)
+    #[DataProvider('steps')]
+    public function testTrim(array $test): void
     {
         $result = GridGroupService::trim($test['raw'], $test['headerRegex'] ?? null);
 
