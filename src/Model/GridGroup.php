@@ -83,7 +83,7 @@ class GridGroup
         return count($this->getGrids());
     }
 
-    // return csv data from the GROUP
+    // return csv data from the GROUP, the delimiter is <!-- csvFilename.csv --> between groups
     public function loadString(string $groupText, bool $asArray = false): self
     {
         $mm = [];

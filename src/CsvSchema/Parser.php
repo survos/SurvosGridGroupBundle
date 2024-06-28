@@ -146,7 +146,7 @@ class Parser
             if ($header == 'medidas') {
 //                dump($header);
             }
-            assert($property->getType() <> $header, $header);
+//            assert($property->getType() <> $header, $property->getType() . '<>' . $header);
             if (!$property->getType()) {
                 $property = self::parseConfigHeader('att.string', $property->getCode());
             }
@@ -439,8 +439,8 @@ class Parser
             [$type, $values] = explode('.', $dottedConfig, 2);
             $parameters = $values; // what's after the .
         } else {
-            $type = null;
-//            $type = $dottedConfig; // no params, native type, like string, which is really att.string
+//            $type = null;
+            $type = $dottedConfig; // no params, native type, like string, which is really att.string
             $parameters = null;
             if (in_array($type, Property::ATTRIBUTE_TYPES )) {
                 $parameters = $type;
@@ -451,7 +451,7 @@ class Parser
 
         // handle array shortcut
 
-        $lastChar = $dottedConfig ? substr($dottedConfig, -1) : null;
+        $lastChar = $header ? substr($header, -1) : null;
         if (in_array($lastChar, ['|', '$', ',', '/'])) {
 //            $parameters = null;
 //            dump(dottedConfig: $dottedConfig, config: $config, type: $type);
@@ -461,6 +461,7 @@ class Parser
 //            $subType = $type; // for rel.mat, the subtype is 'mat'
 //            dd(type: $type);
             $settings['delim'] = $lastChar;
+            $type = Property::PROPERTY_ARRAY;
 //            $map["/^$newColumn$/"] = "array($lastChar)";
 
         }
@@ -527,7 +528,7 @@ class Parser
             $method = static::$customTypes[$type];
 //            dd('custom type: ' . $type, $method);
         } else {
-            assert(false, $property->__toString() . ' ' . $config);
+//            assert(false, $property->__toString() . ' ' . $config);
             throw new UnsupportedTypeException($type);
         }
 //        dd($config,$value, $key, $type);

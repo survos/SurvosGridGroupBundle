@@ -36,7 +36,7 @@ composer require survos/grid-group-bundle
 
 ## Usage
 
-The most consise way to define the schema is to embed the column definitions in the header itself.  The header is broken into these parts:
+The most concise way to define the schema is to embed the column definitions in the header itself.  The header is broken into these parts:
 
     column:type?settings
     column:rel.relatedGrid?settings

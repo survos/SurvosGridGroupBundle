@@ -47,7 +47,7 @@ class CsvCacheTest extends TestCase
     }
 
     #[DataProvider('csvSteps')]
-    public function testBaseMethods($test): void
+    public function testBaseMethods($test, $cacheName): void
     {
         $csvCache = new CsvCache($test['db'], $test['key'], []);
         $this->assertSame($test['db'], $csvCache->getCsvFilename());

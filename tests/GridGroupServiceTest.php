@@ -24,7 +24,7 @@ class GridGroupServiceTest extends KernelTestCase
     {
         $data = Yaml::parseFile(__DIR__ . '/excel-trim-test.yaml');
         foreach ($data['trim'] as $test) {
-            yield [$test['file'] => $test];
+            yield ['test' => $test];
         }
     }
 }

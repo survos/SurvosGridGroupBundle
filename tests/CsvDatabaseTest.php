@@ -11,7 +11,7 @@ use Symfony\Component\Yaml\Yaml;
 class CsvDatabaseTest extends TestCase
 {
     #[DataProvider('csvSteps')]
-    public function testCsvDatabase(array $test): void
+    public function testCsvDatabase(array $test, string $db): void
     {
         $purgeFirst = !isset($test['ignore_clear_db']);
         $headers = $test['headers'] ?? []; // really the schema
@@ -44,7 +44,7 @@ class CsvDatabaseTest extends TestCase
     {
         $data = Yaml::parseFile(__DIR__ . '/movie-test.yaml');
         foreach ($data['cache'] as $test) {
-            yield [$test['db'] => $test];
+            yield ['test' => $test, 'db' => $test['db']];
         }
     }
 
