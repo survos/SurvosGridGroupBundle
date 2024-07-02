@@ -3,6 +3,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\TestDox;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\TestWithJson;
+use PHPUnit\Framework\Attributes\TestWith;
 final class ExampleTest extends TestCase
 {
     #[DataProvider('additionProvider')]
@@ -12,6 +13,7 @@ final class ExampleTest extends TestCase
         $this->assertSame($expected, $a + $b);
     }
 
+    #[TestWith([0, 0, 0])]
     #[TestWithJson('[0, 0, 0]')]
     #[TestWithJson('[0, 1, 1]')]
     #[TestWithJson('[1, 0, 1]')]
