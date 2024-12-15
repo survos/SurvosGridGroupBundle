@@ -181,7 +181,7 @@ if (($handle = fopen($filename, "r")) !== FALSE) {
     }
 
 
-    static public function fetchRow(string $filename, string $separator = ",", int $limit = null, int $offset = null): \Generator
+    static public function fetchRow(string $filename, string $separator = ",", ?int $limit = null, ?int $offset = null): \Generator
     {
         static $headers = null;
         static $headersCount = null;

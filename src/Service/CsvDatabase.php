@@ -324,7 +324,7 @@ class CsvDatabase implements LoggerAwareInterface, \Stringable
 
     }
 
-    public function stringifyData(array $dataValues, array $headers=null): array
+    public function stringifyData(array $dataValues, ?array $headers=null): array
     {
         foreach ($dataValues as $idx => $value) {
             if (is_array($value)) {
@@ -701,7 +701,7 @@ class CsvDatabase implements LoggerAwareInterface, \Stringable
      * @return CsvDatabase
      * @throws Exception
      */
-    public function set(string|array|object|null $data = null, array|string $key = null): self
+    public function set(string|array|object|null $data = null, array|string|null $key = null): self
     {
         assert(!is_string($data), 'set($data, $key) now, arguments are probably reversed.');
         if (!$key) {

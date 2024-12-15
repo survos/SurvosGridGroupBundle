@@ -618,7 +618,7 @@ class GridDatabase implements LoggerAwareInterface
      * @return CsvDatabase
      * @throws Exception
      */
-    public function set(array|object|null $data = null, string $key = null): self
+    public function set(array|object|null $data = null, ?string $key = null): self
     {
         if (!$key) {
 //            $key = $this->getKeyName();

@@ -86,7 +86,7 @@ class CsvCacheAdapter implements AdapterInterface, CacheInterface, LoggerAwareIn
         return true;
     }
 
-    public function get(string $key, callable $callback, float $beta = null, array &$metadata = null): mixed
+    public function get(string $key, callable $callback, ?float $beta = null, ?array &$metadata = null): mixed
     {
         $item = ($callback)($this->getItem($key));
         if (!$isHit = $this->hasItem($key)) {
